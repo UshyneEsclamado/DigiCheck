@@ -814,9 +814,11 @@ export default {
 
 .school-year-management {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 50%, #fefce8 100%);
+  height: calc(100vh - 64px);
+  background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #fef3c7 100%);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  padding: 1rem;
+  padding: 1.5rem 2rem;
+  position: relative;
   overflow-y: auto;
 }
 
@@ -826,73 +828,23 @@ export default {
 }
 
 .school-year-management::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, #f1f5f9, #e2e8f0);
+  background: rgba(241, 245, 249, 0.5);
   border-radius: 10px;
 }
 
 .school-year-management::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #3D8D7A, #2d6a5a);
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   border-radius: 10px;
-  border: 2px solid #f1f5f9;
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .school-year-management::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #2d6a5a, #1e4d3f);
+  background: linear-gradient(135deg, #2d6a5a, #1e4d3f);
 }
 
 /* Top Navigation */
 .top-navigation {
-  margin-bottom: 1rem;
-  animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: white;
-  color: #3D8D7A;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.back-button:hover {
-  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
-  color: white;
-  border-color: #3D8D7A;
-  transform: translateX(-4px);
-  box-shadow: 0 4px 16px rgba(61, 141, 122, 0.25);
-}
-
-.back-button svg {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.back-button:hover svg {
-  transform: translateX(-2px);
-}
-
-/* Page Header */
-.page-header {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
   animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -907,32 +859,95 @@ export default {
   }
 }
 
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(241, 245, 249, 0.8);
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.back-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.back-button:hover::before {
+  left: 100%;
+}
+
+.back-button:hover {
+  background: rgba(226, 232, 240, 0.9);
+  border-color: #3D8D7A;
+  color: #3D8D7A;
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.15);
+}
+
+.back-button svg {
+  transition: transform 0.3s ease;
+}
+
+.back-button:hover svg {
+  transform: translateX(-2px);
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 1.5rem;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+
 .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   padding: 1.5rem 2rem;
-  border-radius: 20px;
-  border: 2px solid rgba(61, 141, 122, 0.1);
-  box-shadow: 
-    0 4px 20px rgba(61, 141, 122, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08),
+              0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
 }
 
-.header-content:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 8px 30px rgba(61, 141, 122, 0.12),
-    0 2px 6px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+.header-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3D8D7A, #2d6a5a, #3D8D7A);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .header-text h1 {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, #1e293b, #3D8D7A);
   -webkit-background-clip: text;
@@ -943,71 +958,44 @@ export default {
 }
 
 .subtitle {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #64748b;
   font-weight: 500;
 }
 
 .header-icon {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
-  border-radius: 16px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 
-    0 4px 14px rgba(61, 141, 122, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: iconPulse 3s ease-in-out infinite;
+  box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
+  animation: pulse 2s ease-in-out infinite;
 }
 
-@keyframes iconPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 12px 30px rgba(61, 141, 122, 0.4);
+  }
 }
 
 /* Active Year Banner */
 .active-year-banner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
   color: white;
-  box-shadow: 
-    0 10px 30px rgba(102, 126, 234, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: bannerSlide 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.active-year-banner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  animation: shimmer 3s infinite;
-}
-
-@keyframes bannerSlide {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes shimmer {
-  to { left: 100%; }
+  box-shadow: 0 8px 24px rgba(61, 141, 122, 0.3);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 .banner-content {
@@ -1073,11 +1061,12 @@ export default {
   border: 2px solid #fbbf24;
   border-radius: 12px;
   padding: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   color: #92400e;
   display: flex;
   align-items: center;
   gap: 1rem;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 .warning-banner svg {
@@ -1098,17 +1087,14 @@ export default {
 
 /* Create Form Section */
 .create-form-section {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.25rem;
-  border: 2px solid rgba(61, 141, 122, 0.1);
-  box-shadow: 
-    0 4px 20px rgba(61, 141, 122, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s backwards;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .section-header {
@@ -1140,25 +1126,25 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  padding: 0.75rem 1.5rem;
+  background: rgba(248, 250, 252, 0.95);
   color: #475569;
-  border: 2px solid #e2e8f0;
+  border: 2px solid rgba(226, 232, 240, 0.8);
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .toggle-btn:hover {
   background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   color: white;
   border-color: #3D8D7A;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.25);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(61, 141, 122, 0.3);
 }
 
 .create-form {
@@ -1230,17 +1216,14 @@ export default {
 
 /* School Years List */
 .school-years-list {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.25rem;
-  border: 2px solid rgba(61, 141, 122, 0.1);
-  box-shadow: 
-    0 4px 20px rgba(61, 141, 122, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s backwards;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
   max-height: calc(100vh - 420px);
   min-height: 400px;
   overflow-y: auto;
@@ -1252,19 +1235,20 @@ export default {
 }
 
 .school-years-list::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, #f8fafc, #f1f5f9);
-  border-radius: 10px;
-  margin: 8px;
+  background: rgba(241, 245, 249, 0.5);
+  border-radius: 8px;
+  margin: 8px 0;
 }
 
 .school-years-list::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #3D8D7A, #2d6a5a);
-  border-radius: 10px;
-  border: 2px solid #f8fafc;
+  border-radius: 8px;
+  border: 2px solid rgba(241, 245, 249, 0.5);
 }
 
 .school-years-list::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #2d6a5a, #1e4d3f);
+  border: 1px solid #e2e8f0;
 }
 
 .count-badge {
@@ -1342,32 +1326,25 @@ export default {
 }
 
 .year-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92));
-  backdrop-filter: blur(8px);
-  border: 2px solid rgba(61, 141, 122, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.6);
   border-radius: 16px;
-  padding: 1.25rem;
+  padding: 1.5rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
 .year-card:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 
-    0 12px 28px rgba(61, 141, 122, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 40px rgba(61, 141, 122, 0.15);
   border-color: rgba(61, 141, 122, 0.3);
 }
 
 .year-card.active-year {
   border-color: rgba(102, 126, 234, 0.4);
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
-  box-shadow: 
-    0 4px 16px rgba(102, 126, 234, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
 }
 
 .year-header {
@@ -1487,54 +1464,79 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  padding: 0.55rem 0.85rem;
+  padding: 0.6rem 1rem;
   border: none;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.action-btn:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .action-btn.activate {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .action-btn.activate:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
 }
 
 .action-btn.edit {
-  background: #f1f5f9;
+  background: rgba(241, 245, 249, 0.9);
   color: #475569;
+  border: 1px solid rgba(203, 213, 225, 0.5);
 }
 
 .action-btn.edit:hover {
-  background: #e2e8f0;
+  background: rgba(226, 232, 240, 0.95);
   color: #1e293b;
+  border-color: rgba(203, 213, 225, 0.8);
 }
 
 .action-btn.close {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
 .action-btn.close:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
 }
 
 .action-btn.view {
   background: linear-gradient(135deg, #06b6d4, #0891b2);
   color: white;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
 }
 
 .action-btn.view:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
 }
 
 /* Modal Styles */
@@ -1545,7 +1547,7 @@ export default {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1560,22 +1562,20 @@ export default {
   }
   to { 
     opacity: 1;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
   }
 }
 
 .modal-content {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(30px);
   border-radius: 24px;
   max-width: 550px;
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 
-    0 25px 50px rgba(0, 0, 0, 0.25),
-    0 8px 16px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.6);
   border: 2px solid rgba(61, 141, 122, 0.15);
   animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

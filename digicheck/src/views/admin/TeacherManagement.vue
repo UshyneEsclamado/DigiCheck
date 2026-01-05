@@ -1,27 +1,19 @@
 <template>
   <div class="teacher-management">
+    <!-- Back Button -->
+    <button @click="goBackToDashboard" class="back-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to Dashboard
+    </button>
+
     <div class="page-header">
       <div class="header-content">
         <div class="header-text">
           <h1>Teacher Management</h1>
           <p class="subtitle">View, search, edit, and manage all teachers</p>
         </div>
-        <div class="header-actions">
-          <button @click="navigateToAddTeacher" class="btn-add">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Add New Teacher
-          </button>
-        </div>
-      </div>
-      <div class="header-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
       </div>
     </div>
 
@@ -152,7 +144,7 @@
             </tr>
             <tr v-else v-for="teacher in paginatedTeachers" :key="teacher.id" class="teacher-row">
               <td class="id-col">{{ teacher.employee_id || '—' }}</td>
-              <td class="name-col">{{ teacher.last_name }}, {{ teacher.first_name }} {{ teacher.middle_name || '' }}</td>
+              <td class="name-col">{{ teacher.full_name }}</td>
               <td class="username-col">{{ teacher.username || '—' }}</td>
               <td class="email-col">{{ teacher.email || '—' }}</td>
               <td class="subjects-col">
@@ -289,7 +281,7 @@
                 </svg>
                 Full Name
               </div>
-              <div class="detail-value">{{ selectedTeacher.first_name }} {{ selectedTeacher.middle_name }} {{ selectedTeacher.last_name }}</div>
+              <div class="detail-value">{{ selectedTeacher.full_name }}</div>
             </div>
             
             <div class="detail-row">
@@ -332,6 +324,17 @@
             <div class="detail-row">
               <div class="detail-label">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                Department
+              </div>
+              <div class="detail-value">{{ selectedTeacher.department || '—' }}</div>
+            </div>
+            
+            <div class="detail-row">
+              <div class="detail-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                 </svg>
                 Phone
@@ -348,19 +351,6 @@
                 Address
               </div>
               <div class="detail-value">{{ selectedTeacher.address || '—' }}</div>
-            </div>
-            
-            <div class="detail-row">
-              <div class="detail-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                Date of Birth
-              </div>
-              <div class="detail-value">{{ selectedTeacher.date_of_birth || '—' }}</div>
             </div>
             
             <div class="detail-row full-width">
@@ -410,35 +400,15 @@
         </div>
         <div class="modal-body" v-if="editForm">
           <div class="form-grid">
-            <div class="form-group">
+            <div class="form-group full-width">
               <label>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
-                First Name
+                Full Name
               </label>
-              <input v-model="editForm.first_name" type="text" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Middle Name
-              </label>
-              <input v-model="editForm.middle_name" type="text" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Last Name
-              </label>
-              <input v-model="editForm.last_name" type="text" class="form-input" />
+              <input v-model="editForm.full_name" type="text" class="form-input" />
             </div>
             <div class="form-group">
               <label>
@@ -471,6 +441,16 @@
               </label>
               <input v-model="editForm.phone_number" type="text" class="form-input" />
             </div>
+            <div class="form-group">
+              <label>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                Department
+              </label>
+              <input v-model="editForm.department" type="text" class="form-input" />
+            </div>
             <div class="form-group full-width">
               <label>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -489,9 +469,9 @@
                 </svg>
                 Status
               </label>
-              <select v-model="editForm.status" class="form-input">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+              <select v-model="editForm.is_active" class="form-input">
+                <option :value="true">Active</option>
+                <option :value="false">Inactive</option>
               </select>
             </div>
           </div>
@@ -724,16 +704,20 @@ export default {
     this.fetchSubjects()
   },
   methods: {
+    goBackToDashboard() {
+      this.$router.push('/admin')
+    },
+
     async fetchAllTeachers() {
       this.loading = true
-      // Join with profiles to get username and email, and subjects
+      // Join with profiles to get username and fetch teachers with their details
       const { data, error } = await supabase
         .from('teachers')
         .select(`
           *,
-          profiles!teachers_profile_id_fkey(username, email)
+          profiles!teachers_profile_id_fkey(username)
         `)
-        .order('last_name', { ascending: true })
+        .order('full_name', { ascending: true })
       
       if (error) {
         console.error('Error fetching teachers:', error)
@@ -754,8 +738,7 @@ export default {
       this.teachers = data.map(t => ({
         ...t,
         username: t.profiles?.username || '',
-        email: t.profiles?.email || '',
-        status: t.status || 'active' // Default status if not in DB
+        status: t.is_active ? 'active' : 'inactive'
       }))
       this.applyFilters()
       this.loading = false
@@ -777,9 +760,7 @@ export default {
       if (this.searchQuery.trim()) {
         const q = this.searchQuery.toLowerCase()
         result = result.filter(t => 
-          t.first_name?.toLowerCase().includes(q) ||
-          t.last_name?.toLowerCase().includes(q) ||
-          t.middle_name?.toLowerCase().includes(q) ||
+          t.full_name?.toLowerCase().includes(q) ||
           t.username?.toLowerCase().includes(q) ||
           t.email?.toLowerCase().includes(q) ||
           t.employee_id?.toLowerCase().includes(q)
@@ -862,14 +843,13 @@ export default {
       const { error } = await supabase
         .from('teachers')
         .update({
-          first_name: this.editForm.first_name,
-          middle_name: this.editForm.middle_name,
-          last_name: this.editForm.last_name,
+          full_name: this.editForm.full_name,
           email: this.editForm.email,
           employee_id: this.editForm.employee_id,
           phone_number: this.editForm.phone_number,
           address: this.editForm.address,
-          status: this.editForm.status
+          department: this.editForm.department,
+          is_active: this.editForm.is_active
         })
         .eq('id', this.editForm.id)
 
@@ -892,7 +872,7 @@ export default {
     async deactivateTeacher() {
       const { error } = await supabase
         .from('teachers')
-        .update({ status: 'inactive' })
+        .update({ is_active: false })
         .eq('id', this.selectedTeacher.id)
 
       if (error) {
@@ -1068,6 +1048,43 @@ export default {
   background: linear-gradient(135deg, #2d6a5a, #1e4d3f);
 }
 
+/* Back Button */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  color: #3D8D7A;
+  border: 2px solid rgba(61, 141, 122, 0.2);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.back-btn:hover {
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  color: white;
+  border-color: #3D8D7A;
+  transform: translateX(-4px);
+  box-shadow: 0 6px 20px rgba(61, 141, 122, 0.3);
+}
+
+.back-btn svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.back-btn:hover svg {
+  transform: translateX(-3px);
+}
+
 /* Page Header */
 .page-header {
   margin-bottom: 1.5rem;
@@ -1139,76 +1156,6 @@ export default {
   font-size: 0.85rem;
   color: #64748b;
   font-weight: 500;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.btn-add {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.25),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-add::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s ease;
-}
-
-.btn-add:hover::before {
-  left: 100%;
-}
-
-.btn-add:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(61, 141, 122, 0.35),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.header-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 12px 30px rgba(61, 141, 122, 0.4);
-  }
 }
 
 /* Filters Bar */
@@ -1833,9 +1780,9 @@ export default {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
   backdrop-filter: blur(20px);
   border-radius: 24px;
-  max-width: 600px;
+  max-width: 650px;
   width: 90%;
-  max-height: 85vh;
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25),
               0 8px 16px rgba(0, 0, 0, 0.15),
@@ -1940,7 +1887,7 @@ export default {
 }
 
 .modal-body {
-  padding: 2.5rem;
+  padding: 2rem 2.5rem 2.5rem 2.5rem;
 }
 
 .modal-icon {
@@ -1950,7 +1897,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 2rem;
+  margin: 0 auto 1.5rem;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
@@ -1980,7 +1927,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 2rem;
+  margin: 0 auto 1.5rem;
   color: white;
   font-size: 2.5rem;
   font-weight: 700;
@@ -1990,54 +1937,66 @@ export default {
 .details-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.25rem;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .detail-row {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: 180px 1fr;
   gap: 1.5rem;
-  padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.9));
-  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.95));
+  border-radius: 14px;
   align-items: center;
-  border: 1px solid rgba(61, 141, 122, 0.1);
+  border: 2px solid rgba(61, 141, 122, 0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 60px;
 }
 
 .detail-row:hover {
-  background: linear-gradient(135deg, rgba(61, 141, 122, 0.05), rgba(45, 106, 90, 0.03));
-  border-color: rgba(61, 141, 122, 0.2);
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.1);
+  background: linear-gradient(135deg, rgba(61, 141, 122, 0.06), rgba(45, 106, 90, 0.04));
+  border-color: rgba(61, 141, 122, 0.25);
+  transform: translateX(6px);
+  box-shadow: 0 6px 16px rgba(61, 141, 122, 0.12);
 }
 
 .detail-row.full-width {
   grid-template-columns: 1fr;
+  min-height: auto;
 }
 
 .detail-label {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 800;
+  font-size: 0.8rem;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
 }
 
 .detail-label svg {
   color: #3D8D7A;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .detail-value {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #1e293b;
   font-weight: 600;
+  line-height: 1.6;
+}
+
+.detail-row.full-width .detail-label {
+  margin-bottom: 0.75rem;
+}
+
+.detail-row.full-width .detail-value {
+  padding-left: 2rem;
 }
 
 .form-grid {

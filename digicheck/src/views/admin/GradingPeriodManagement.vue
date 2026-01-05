@@ -3,9 +3,17 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-content">
-        <div class="header-text">
-          <h1>Grading Period Management</h1>
-          <p class="subtitle">Create and manage grading periods within school years</p>
+        <div class="header-left">
+          <button class="back-btn" @click="goBackToDashboard">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Back to Dashboard
+          </button>
+          <div class="header-text">
+            <h1>Grading Period Management</h1>
+            <p class="subtitle">Create and manage grading periods within school years</p>
+          </div>
         </div>
         <div class="header-icon">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -961,6 +969,10 @@ export default {
       this.fetchGradingPeriods()
     },
 
+    goBackToDashboard() {
+      this.$router.push('/admin/dashboard')
+    },
+
     formatDate(dateString) {
       if (!dateString) return '—'
       return new Date(dateString).toLocaleDateString('en-US', { 
@@ -974,7 +986,7 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 * {
   margin: 0;
@@ -984,12 +996,50 @@ export default {
 
 .grading-period-management {
   min-height: 100vh;
-  background: #f8fafc;
-  font-family: 'Inter', sans-serif;
-  padding: 2rem;
+  height: calc(100vh - 64px);
+  background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #fef3c7 100%);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  padding: 1.5rem 2rem;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.grading-period-management::-webkit-scrollbar {
+  width: 12px;
+}
+
+.grading-period-management::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.5);
+  border-radius: 10px;
+}
+
+.grading-period-management::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.grading-period-management::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #2d6a5a, #1e4d3f);
 }
 
 /* Page Header */
+.page-header {
+  margin-bottom: 1.5rem;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .page-header {
   margin-bottom: 2rem;
 }
@@ -998,44 +1048,151 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
-  padding: 2rem 2.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 1.5rem 2rem;
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08),
+              0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3D8D7A, #2d6a5a, #3D8D7A);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(241, 245, 249, 0.8);
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.back-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.back-btn:hover::before {
+  left: 100%;
+}
+
+.back-btn:hover {
+  background: rgba(226, 232, 240, 0.9);
+  border-color: #3D8D7A;
+  color: #3D8D7A;
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.15);
 }
 
 .header-text h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: #64748b;
+  font-weight: 500;
 }
 
 .header-icon {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
-  border-radius: 16px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 12px 30px rgba(61, 141, 122, 0.4);
+  }
 }
 
 /* Selector Card */
 .selector-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 1.5rem 2rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+  position: relative;
+  overflow: hidden;
+}
+
+.selector-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.selector-card:hover::before {
+  left: 100%;
 }
 
 .selector-header {
@@ -1047,6 +1204,7 @@ export default {
 
 .selector-header svg {
   color: #3D8D7A;
+  flex-shrink: 0;
 }
 
 .selector-header h3 {
@@ -1067,10 +1225,11 @@ export default {
   border: 2px solid #e2e8f0;
   border-radius: 10px;
   font-size: 0.95rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   transition: all 0.2s ease;
   background: white;
   color: #1e293b;
+  font-weight: 500;
 }
 
 .select-input:focus {
@@ -1084,9 +1243,10 @@ export default {
   background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   border-radius: 16px;
   padding: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   color: white;
   box-shadow: 0 8px 24px rgba(61, 141, 122, 0.3);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 .banner-content {
@@ -1152,11 +1312,12 @@ export default {
   border: 2px solid #fbbf24;
   border-radius: 12px;
   padding: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   color: #92400e;
   display: flex;
   align-items: center;
   gap: 1rem;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 .warning-banner svg {
@@ -1177,12 +1338,14 @@ export default {
 
 /* Templates Section */
 .templates-section {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 2rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .section-header {
@@ -1310,12 +1473,14 @@ export default {
 
 /* Create Form Section */
 .create-form-section {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 2rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 .toggle-btn {
@@ -1323,15 +1488,32 @@ export default {
   align-items: center;
   gap: 0.5rem;
   padding: 0.65rem 1.25rem;
-  background: #f1f5f9;
+  background: rgba(241, 245, 249, 0.8);
   color: #475569;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.toggle-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.toggle-btn:hover::before {
+  left: 100%;
 }
 
 .toggle-btn:hover {
@@ -1378,10 +1560,11 @@ export default {
   border: 2px solid #e2e8f0;
   border-radius: 10px;
   font-size: 0.9rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   transition: all 0.2s ease;
   background: white;
   color: #1e293b;
+  font-weight: 500;
 }
 
 .form-input:focus {
@@ -1404,12 +1587,14 @@ export default {
 
 /* Grading Periods List */
 .grading-periods-list {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 2rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
 }
 
 .count-badge {
@@ -1910,8 +2095,25 @@ export default {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -1929,7 +2131,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: #f1f5f9;
+  background: rgba(241, 245, 249, 0.8);
   color: #475569;
   border: 2px solid #e2e8f0;
   padding: 0.875rem 1.25rem;
@@ -1937,8 +2139,8 @@ export default {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .btn-secondary:hover {
@@ -1960,8 +2162,25 @@ export default {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-warn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-warn:hover::before {
+  left: 100%;
 }
 
 .btn-warn:hover {
@@ -1970,6 +2189,12 @@ export default {
 }
 
 /* Responsive Design */
+@media (max-width: 1400px) {
+  .grading-period-management {
+    padding: 1rem 1.5rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .periods-grid {
     grid-template-columns: 1fr;
@@ -1978,7 +2203,7 @@ export default {
 
 @media (max-width: 768px) {
   .grading-period-management {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
   }
 
   .header-content {
@@ -1986,6 +2211,16 @@ export default {
     text-align: center;
     gap: 1rem;
     padding: 1.5rem;
+  }
+
+  .header-left {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .back-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .header-text h1 {
@@ -2015,6 +2250,25 @@ export default {
 
   .action-btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .grading-period-management {
+    padding: 0.5rem;
+  }
+
+  .header-content {
+    padding: 1.25rem;
+  }
+
+  .header-text h1 {
+    font-size: 1.25rem;
+  }
+
+  .back-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.8rem;
   }
 }
 </style>

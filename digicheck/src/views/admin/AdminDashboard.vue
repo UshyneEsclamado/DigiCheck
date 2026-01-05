@@ -6,11 +6,21 @@
         <h1>Admin Dashboard</h1>
         <p class="welcome-subtitle">Overview of system statistics and recent activity</p>
       </div>
-      <div class="header-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-          <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
+      <div class="header-actions">
+        <button @click="handleLogout" class="logout-btn" title="Logout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Logout
+        </button>
+        <div class="header-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
       </div>
     </div>
 
@@ -162,6 +172,19 @@
           <div class="action-content">
             <h3>School Year Management</h3>
             <p>Configure academic year settings</p>
+          </div>
+        </button>
+
+        <button class="action-card warn" @click="navigateTo('/admin/grading-periods')">
+          <div class="action-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M2 12h20"/>
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+          </div>
+          <div class="action-content">
+            <h3>Grading Period Management</h3>
+            <p>Manage quarters and grading periods</p>
           </div>
         </button>
       </div>
@@ -579,6 +602,31 @@ export default {
       if (hours < 24) return `${hours}h ago`
       if (days < 7) return `${days}d ago`
       return date.toLocaleDateString()
+    },
+
+    async handleLogout() {
+      const confirmed = confirm('Are you sure you want to logout from the Admin Dashboard?')
+      if (!confirmed) return
+
+      try {
+        // Sign out from Supabase
+        const { error } = await supabase.auth.signOut()
+        
+        if (error) {
+          console.error('Logout error:', error)
+          alert('Failed to logout: ' + error.message)
+          return
+        }
+
+        // Clear any local storage if needed
+        localStorage.removeItem('adminInfo')
+        
+        // Navigate to login page
+        this.$router.push('/login')
+      } catch (error) {
+        console.error('Unexpected logout error:', error)
+        alert('An error occurred during logout')
+      }
     }
   }
 }
@@ -702,6 +750,62 @@ export default {
   font-size: 0.85rem;
   color: #64748b;
   font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 2px solid rgba(220, 38, 38, 0.3);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.logout-btn:hover::before {
+  left: 100%;
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
+}
+
+.logout-btn svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logout-btn:hover svg {
+  transform: translateX(2px);
 }
 
 .header-icon {
