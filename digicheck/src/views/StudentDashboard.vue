@@ -63,6 +63,8 @@
               <h4 v-if="userProfile.fullName">{{ userProfile.fullName }}</h4>
               <h4 v-else>Student</h4>
               <p class="role-text">STUDENT</p>
+              <!-- Gender Display in Dropdown -->
+              <p v-if="userProfile.gender" class="gender-text">{{ userProfile.gender }}</p>
               <!-- Updated Grade Display with Strand in Dropdown -->
               <p v-if="userProfile.grade" class="grade-text">
                 GRADE {{ userProfile.grade }}
@@ -70,6 +72,7 @@
                   - {{ userProfile.strand }}
                 </span>
               </p>
+              <p v-if="userProfile.schoolYear" class="school-year-text">S.Y. {{ userProfile.schoolYear }}</p>
               <p v-if="userProfile.studentId" class="student-id-text">ID: {{ userProfile.studentId }}</p>
             </div>
           </div>
@@ -117,6 +120,11 @@
           
           <p class="role">STUDENT</p>
           
+          <!-- Gender Display -->
+          <p v-if="userProfile.gender" class="gender">
+            {{ userProfile.gender }}
+          </p>
+          
           <!-- Updated Grade Display with Strand in Sidebar -->
           <p v-if="userProfile.grade" class="grade">
             GRADE {{ userProfile.grade }}
@@ -131,6 +139,11 @@
           <!-- Display School Level -->
           <p v-if="userProfile.grade" class="school-level">
             {{ schoolLevel }}
+          </p>
+          
+          <!-- Display School Year -->
+          <p v-if="userProfile.schoolYear" class="school-year">
+            S.Y. {{ userProfile.schoolYear }}
           </p>
           
           <p v-if="userProfile.studentId" class="student-id">
@@ -199,6 +212,20 @@
     </aside>
 
     <main class="main-content">
+      <!-- Welcome Walkthrough Component -->
+      <WelcomeWalkthrough 
+        v-if="currentStudentData"
+        :studentData="currentStudentData"
+        @walkthrough-completed="handleWalkthroughCompleted"
+      />
+      
+      <!-- Profile Completion Card Component -->
+      <ProfileCompletionCard 
+        v-if="currentStudentData"
+        :studentData="currentStudentData"
+        :profilePhoto="userProfile.profilePhoto"
+      />
+      
       <router-view />
     </main>
 
@@ -344,9 +371,15 @@
 
 <script>
 import { supabase } from '../supabase.js';
+import WelcomeWalkthrough from './student/WelcomeWalkthrough.vue';
+import ProfileCompletionCard from './student/ProfileCompletionCard.vue';
 
 export default {
   name: 'StudentDashboard',
+  components: {
+    WelcomeWalkthrough,
+    ProfileCompletionCard
+  },
   data() {
     return {
       userProfile: {
@@ -356,8 +389,14 @@ export default {
         strand: null,
         email: '',
         role: '',
-        profilePhoto: null
+        profilePhoto: null,
+        schoolYear: '',
+        gender: null,
+        hasCompletedWalkthrough: false,
+        profileCompletionDismissed: false,
+        passwordChanged: false
       },
+      currentStudentData: null,
       isLogoutModalVisible: false,
       isProfileMenuOpen: false,
       profileSubscription: null,
@@ -504,7 +543,10 @@ export default {
         
         const { data: studentData, error: studentError } = await supabase
           .from('students')
-          .select('*')
+          .select(`
+            *,
+            school_years:school_year_enrolled(year_name)
+          `)
           .eq('profile_id', profileData.id)
           .single();
 
@@ -523,6 +565,9 @@ export default {
         console.log('');
         console.log('📋 STEP 4: Setting userProfile data...');
         
+        // Store the complete student data for components
+        this.currentStudentData = studentData;
+        
         this.userProfile = {
           fullName: studentData.full_name || '',
           email: studentData.email || '',
@@ -530,7 +575,12 @@ export default {
           grade: studentData.grade_level,
           strand: studentData.strand || null,
           role: 'student',
-          profilePhoto: profileData.profile_photo || null
+          profilePhoto: profileData.profile_photo || null,
+          schoolYear: studentData.school_years?.year_name || '',
+          gender: studentData.gender || null,
+          hasCompletedWalkthrough: studentData.has_completed_walkthrough || false,
+          profileCompletionDismissed: studentData.profile_completion_dismissed || false,
+          passwordChanged: studentData.password_changed_from_default || false
         };
 
         console.log('✅ ========================================');
@@ -542,6 +592,10 @@ export default {
         console.log('Strand:', this.userProfile.strand);
         console.log('School Level:', this.schoolLevel);
         console.log('Is Senior High:', this.isSeniorHigh);
+        console.log('School Year:', this.userProfile.schoolYear);
+        console.log('Gender:', this.userProfile.gender);
+        console.log('Has Completed Walkthrough:', this.userProfile.hasCompletedWalkthrough);
+        console.log('Password Changed:', this.userProfile.passwordChanged);
         console.log('Role:', this.userProfile.role);
         console.log('Email:', this.userProfile.email);
         console.log('Profile Photo:', this.userProfile.profilePhoto);
@@ -586,7 +640,11 @@ export default {
             if (payload.new) {
               this.userProfile.fullName = payload.new.full_name || this.userProfile.fullName;
               this.userProfile.email = payload.new.email || this.userProfile.email;
-              this.userProfile.profilePhoto = payload.new.profile_photo || this.userProfile.profilePhoto;
+              // Explicitly check for profile_photo to avoid setting null
+              if (payload.new.profile_photo !== undefined) {
+                this.userProfile.profilePhoto = payload.new.profile_photo;
+                console.log('✅ Profile photo updated via realtime:', payload.new.profile_photo);
+              }
               this.$nextTick(() => {
                 this.$forceUpdate();
               });
@@ -613,6 +671,16 @@ export default {
               this.userProfile.studentId = payload.new.student_id || this.userProfile.studentId;
               this.userProfile.grade = payload.new.grade_level;
               this.userProfile.strand = payload.new.strand || null;
+              this.userProfile.gender = payload.new.gender || null;
+              this.userProfile.hasCompletedWalkthrough = payload.new.has_completed_walkthrough || false;
+              this.userProfile.profileCompletionDismissed = payload.new.profile_completion_dismissed || false;
+              this.userProfile.passwordChanged = payload.new.password_changed_from_default || false;
+              
+              // Update currentStudentData as well
+              if (this.currentStudentData) {
+                this.currentStudentData = { ...this.currentStudentData, ...payload.new };
+              }
+              
               this.$nextTick(() => {
                 this.$forceUpdate();
               });
@@ -790,10 +858,12 @@ export default {
         nameChanged, 
         studentIdChanged, 
         strandChanged,
+        photoChanged,
         newGrade, 
         newName, 
         newStudentId,
-        newStrand 
+        newStrand,
+        newPhoto
       } = event.detail || {};
       
       if (gradeChanged && newGrade !== undefined) {
@@ -807,6 +877,24 @@ export default {
       }
       if (strandChanged !== undefined) {
         this.userProfile.strand = newStrand || null;
+      }
+      if (photoChanged && newPhoto !== undefined) {
+        this.userProfile.profilePhoto = newPhoto;
+        console.log('✅ Profile photo updated:', newPhoto);
+      }
+      
+      this.$nextTick(() => {
+        this.$forceUpdate();
+      });
+    },
+    
+    handleWalkthroughCompleted() {
+      console.log('🎉 Walkthrough completed!');
+      this.userProfile.hasCompletedWalkthrough = true;
+      
+      // Update currentStudentData as well
+      if (this.currentStudentData) {
+        this.currentStudentData.has_completed_walkthrough = true;
       }
       
       this.$nextTick(() => {
@@ -973,6 +1061,21 @@ export default {
   border: 1px solid var(--border-color);
 }
 
+.user-info .gender {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--bg-accent);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border-color);
+  opacity: 0.85;
+}
+
 .user-info .grade {
   font-size: 0.85rem;
   color: var(--accent-color);
@@ -1019,6 +1122,20 @@ export default {
   text-transform: uppercase;
   letter-spacing: 0.3px;
   min-height: 0.8rem;
+}
+
+.user-info .school-year {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin: 0.4rem 0;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--bg-primary);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  display: inline-block;
 }
 
 .student-id-missing {
@@ -1514,6 +1631,16 @@ export default {
   margin: 0;
 }
 
+.gender-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0.25rem 0 0 0;
+  opacity: 0.85;
+}
+
 .grade-text {
   font-size: 0.75rem;
   font-weight: 500;
@@ -1529,6 +1656,16 @@ export default {
   color: var(--text-secondary);
   margin: 0.25rem 0 0 0;
   opacity: 0.8;
+}
+
+.school-year-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin: 0.25rem 0;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .profile-actions {

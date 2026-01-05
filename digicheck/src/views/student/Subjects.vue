@@ -75,6 +75,16 @@
           <div class="header-text">
             <h1 class="page-title">My Subjects</h1>
             <p class="page-subtitle">View and manage your enrolled subjects</p>
+            <div class="academic-info">
+              <span class="academic-year">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                S.Y. {{ currentSchoolYear }}
+              </span>
+              <span class="quarter-badge">{{ currentQuarter }}</span>
+            </div>
           </div>
         </div>
         
@@ -394,6 +404,8 @@ export default {
       favoriteSubjects: new Set(),
       archivedSubjects: new Set(),
       enrollmentSubscription: null,
+      currentSchoolYear: '',
+      currentQuarter: '',
     };
   },
   watch: {
@@ -547,6 +559,54 @@ export default {
         await this.$router.push('/login')
         return false
       }
+    },
+
+    calculateSchoolYear() {
+      // Philippine school calendar typically starts in June
+      // Current date is January 5, 2026
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1; // JavaScript months are 0-indexed
+      const currentDay = now.getDate();
+      
+      // If we're in January-May, the school year started last year
+      // If we're in June-December, the school year started this year
+      let schoolYearStart;
+      if (currentMonth >= 1 && currentMonth <= 5) {
+        schoolYearStart = currentYear - 1;
+      } else {
+        schoolYearStart = currentYear;
+      }
+      
+      const schoolYearEnd = schoolYearStart + 1;
+      this.currentSchoolYear = `${schoolYearStart}-${schoolYearEnd}`;
+      
+      // Calculate current quarter based on Philippine DepEd calendar
+      // Typical schedule (may vary slightly by division):
+      // 1st Quarter: June - August (approximately 45-50 days)
+      // 2nd Quarter: September - November (approximately 45-50 days)
+      // 3rd Quarter: December - February (approximately 45-50 days)
+      // 4th Quarter: March - May (approximately 45-50 days)
+      
+      let quarter = '';
+      
+      if (currentMonth === 6 || currentMonth === 7 || currentMonth === 8) {
+        // June to August
+        quarter = '1st Quarter';
+      } else if (currentMonth === 9 || currentMonth === 10 || currentMonth === 11) {
+        // September to November
+        quarter = '2nd Quarter';
+      } else if (currentMonth === 12 || currentMonth === 1 || currentMonth === 2) {
+        // December to February
+        quarter = '3rd Quarter';
+      } else if (currentMonth === 3 || currentMonth === 4 || currentMonth === 5) {
+        // March to May
+        quarter = '4th Quarter';
+      }
+      
+      this.currentQuarter = quarter;
+      
+      console.log(`📅 School Year: ${this.currentSchoolYear}, Quarter: ${this.currentQuarter}`);
     },
 
     generateSubjectColor(subjectName) {
@@ -1224,6 +1284,9 @@ export default {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     
     try {
+      // Calculate school year and quarter
+      this.calculateSchoolYear();
+      
       // Setup click handler immediately
       this.$nextTick(() => {
         document.addEventListener('click', this.closeAllOptionsMenus, false)
@@ -1338,6 +1401,47 @@ export default {
   color: #6b7280;
   margin: 0;
   font-weight: 400;
+}
+
+.academic-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.academic-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.academic-year svg {
+  width: 16px;
+  height: 16px;
+  color: #3d8d7a;
+}
+
+.quarter-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #3d8d7a 0%, #2d6d5f 100%);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(61, 141, 122, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .header-stats {
@@ -2424,6 +2528,28 @@ export default {
     font-size: 0.9375rem;
   }
 
+  .academic-info {
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .academic-year {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .academic-year svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .quarter-badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+  }
+
   .header-stats {
     flex-direction: column;
     gap: 0.75rem;
@@ -2579,6 +2705,22 @@ export default {
 
 .dark .page-subtitle {
   color: #9ca3af;
+}
+
+.dark .academic-year {
+  color: #f9fafb;
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+  border-color: #4b5563;
+}
+
+.dark .academic-year svg {
+  color: #20c997;
+}
+
+.dark .quarter-badge {
+  background: linear-gradient(135deg, #20c997 0%, #17a085 100%);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(32, 201, 151, 0.3);
 }
 
 .dark .stat-card {

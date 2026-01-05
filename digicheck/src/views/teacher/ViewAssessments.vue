@@ -899,11 +899,33 @@ const fetchQuizzes = async () => {
 
     console.log('📚 Fetching quizzes for:', { teacherId: teacherId.value, subjectId: subjectId.value, sectionId: sectionId.value })
 
+    // Fetch quizzes that are assigned to this section via bulk_quizzes table
+    const { data: bulkQuizzes, error: bulkError } = await supabase
+      .from('bulk_quizzes')
+      .select('quiz_id')
+      .eq('section_id', sectionId.value);
+
+    if (bulkError) {
+      console.error('Error fetching bulk quizzes:', bulkError);
+      throw bulkError;
+    }
+
+    const quizIds = bulkQuizzes?.map(bq => bq.quiz_id) || [];
+    console.log('📋 Found quiz IDs from bulk_quizzes:', quizIds);
+
+    // If no quizzes found in bulk_quizzes for this section, return empty
+    if (quizIds.length === 0) {
+      console.log('✅ No quizzes found for this section');
+      quizzes.value = [];
+      return;
+    }
+
+    // Fetch the actual quiz data
     const { data: quizzesData, error: quizzesError } = await supabase
       .from('quizzes')
       .select(`*, quiz_questions(id, points)`)
+      .in('id', quizIds)
       .eq('subject_id', subjectId.value)
-      .eq('section_id', sectionId.value)
       .eq('teacher_id', teacherId.value)
       .order('created_at', { ascending: false })
 
@@ -933,14 +955,33 @@ const fetchAssignments = async () => {
 
     console.log('📝 Fetching assignments for:', { teacherId: teacherId.value, subjectId: subjectId.value, sectionId: sectionId.value })
 
+    // ✅ BULK ASSIGNMENTS - Two-step query via bulk_assignments junction table
+    // Step 1: Get assignment IDs for this section from bulk_assignments
+    const { data: bulkAssignments, error: bulkError } = await supabase
+      .from('bulk_assignments')
+      .select('assignment_id')
+      .eq('section_id', sectionId.value)
+
+    if (bulkError) throw bulkError
+
+    const assignmentIds = bulkAssignments?.map(ba => ba.assignment_id) || []
+    console.log('📋 Found', assignmentIds.length, 'assignments via bulk_assignments')
+
+    // If no assignments found, return empty
+    if (assignmentIds.length === 0) {
+      assignments.value = []
+      return
+    }
+
+    // Step 2: Get actual assignment data using the IDs
     const { data: assignmentsData, error: assignmentsError } = await supabase
       .from('assignments')
       .select(`
         *,
         assignment_submissions(id, status)
       `)
+      .in('id', assignmentIds)
       .eq('subject_id', subjectId.value)
-      .eq('section_id', sectionId.value)
       .eq('teacher_id', teacherId.value)
       .order('created_at', { ascending: false })
 

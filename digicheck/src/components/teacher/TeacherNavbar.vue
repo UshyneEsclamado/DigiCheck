@@ -160,13 +160,28 @@
                 <div class="profile-details">
                   <h4>{{ fullName }}</h4>
                   <p>{{ email }}</p>
-                  <span class="role-badge">Teacher</span>
+                  <span class="role-badge" :class="{ 'dual-role': isAdmin }">
+                    {{ isAdmin ? 'Admin • Teacher' : 'Teacher' }}
+                  </span>
                 </div>
               </div>
               
               <div class="dropdown-divider"></div>
               
               <div class="dropdown-menu">
+                <!-- Admin Dashboard Link (if user is admin) -->
+                <router-link 
+                  v-if="isAdmin" 
+                  to="/admin/dashboard" 
+                  class="dropdown-item admin-link"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                  <span>Switch to Admin Dashboard</span>
+                </router-link>
+
                 <router-link to="/teacher/settings" class="dropdown-item">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.67,8.75L19.67,5.27C19.56,5.08 19.3,5.03 19.1,5.12L16.56,6.23C16.04,5.82 15.5,5.47 14.87,5.19L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.19C8.5,5.47 7.96,5.82 7.44,6.23L4.9,5.12C4.71,5.03 4.44,5.08 4.33,5.27L2.33,8.75C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.33,15.25L4.33,18.73C4.44,18.92 4.71,18.97 4.9,18.88L7.44,17.77C7.96,18.18 8.5,18.53 9.13,18.81L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.81C15.5,18.53 16.04,18.18 16.56,17.77L19.1,18.88C19.3,18.97 19.56,18.92 19.67,18.73L21.67,15.25C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
@@ -248,6 +263,10 @@ const email = computed(() => {
 
 const profilePic = computed(() => {
   return teacherInfo.value?.profile_pic || null
+})
+
+const isAdmin = computed(() => {
+  return teacherProfile.value?.role === 'admin'
 })
 
 const notificationCount = computed(() => notifications.value.length)
@@ -685,6 +704,11 @@ onUnmounted(() => {
   border-radius: 6px;
 }
 
+.role-badge.dual-role {
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  padding: 0.3rem 0.75rem;
+}
+
 .dropdown-divider {
   height: 1px;
   background: var(--border-color);
@@ -725,6 +749,21 @@ onUnmounted(() => {
 .dropdown-item.logout-btn:hover {
   background: rgba(239, 68, 68, 0.1);
   color: #dc2626;
+}
+
+.dropdown-item.admin-link {
+  background: linear-gradient(135deg, rgba(61, 141, 122, 0.1), rgba(45, 106, 90, 0.1));
+  border: 1px solid rgba(61, 141, 122, 0.3);
+  color: #3D8D7A;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.dropdown-item.admin-link:hover {
+  background: linear-gradient(135deg, rgba(61, 141, 122, 0.2), rgba(45, 106, 90, 0.2));
+  border-color: #3D8D7A;
+  color: #2d6a5a;
+  transform: translateX(4px);
 }
 
 /* Modal */

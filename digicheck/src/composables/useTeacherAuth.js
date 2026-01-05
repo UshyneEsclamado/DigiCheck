@@ -100,8 +100,9 @@ export function useTeacherAuth() {
         return { success: false, needsLogin: true }
       }
 
-      if (profile.role !== 'teacher') {
-        console.warn('User is not a teacher')
+      // Allow both 'teacher' role and 'admin' role (if admin has teacher record)
+      if (profile.role !== 'teacher' && profile.role !== 'admin') {
+        console.warn('User is neither a teacher nor an admin')
         return { success: false, wrongRole: true }
       }
 
@@ -131,6 +132,11 @@ export function useTeacherAuth() {
 
       if (teacherError || !teacher) {
         console.error('Teacher error:', teacherError)
+        // If user is admin but has no teacher record, show specific message
+        if (profile.role === 'admin') {
+          console.warn('Admin user has no teacher record')
+          return { success: false, needsTeacherRole: true }
+        }
         return { success: false, needsLogin: true }
       }
 

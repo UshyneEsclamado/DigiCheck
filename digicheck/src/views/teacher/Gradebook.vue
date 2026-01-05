@@ -387,6 +387,48 @@
           </div>
         </div>
 
+        <!-- Quarter Selection -->
+        <div v-if="gradingPeriods.length > 0" class="quarter-selection-card">
+          <div class="quarter-header">
+            <div class="quarter-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9,10V12H7V10H9M13,10V12H11V10H13M17,10V12H15V10H17M19,3A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5A2,2 0 0,1 5,3H6V1H8V3H16V1H18V3H19M19,19V8H5V19H19M9,14V16H7V14H9M13,14V16H11V14H13M17,14V16H15V14H17Z" />
+              </svg>
+              <h3>Select Grading Period</h3>
+            </div>
+            <span v-if="currentSchoolYear" class="school-year-badge">S.Y. {{ currentSchoolYear.year_name }}</span>
+          </div>
+          <div class="quarter-buttons">
+            <button
+              v-for="quarter in gradingPeriods"
+              :key="quarter.id"
+              @click="selectQuarter(quarter)"
+              class="quarter-btn"
+              :class="{ 
+                'active': selectedQuarter?.id === quarter.id,
+                'completed': quarter.status === 'completed',
+                'current': quarter.is_active
+              }"
+            >
+              <div class="quarter-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z" />
+                </svg>
+              </div>
+              <div class="quarter-content">
+                <div class="quarter-name">{{ quarter.period_name }}</div>
+                <div class="quarter-dates">
+                  {{ new Date(quarter.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }} - 
+                  {{ new Date(quarter.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
+                </div>
+              </div>
+              <span v-if="quarter.is_active" class="active-badge">Active</span>
+              <span v-else-if="quarter.status === 'completed'" class="status-badge completed">Completed</span>
+              <span v-else-if="quarter.status === 'upcoming'" class="status-badge upcoming">Upcoming</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Excel-Style Gradebook Table -->
         <div class="gradebook-container">
           <div class="gradebook-scroll">
@@ -435,7 +477,7 @@
                       </div>
                     </div>
                   </th>
-                  <th v-for="assessment in assessments" :key="assessment.id" class="assessment-column">
+                  <th v-for="assessment in filteredAssessments" :key="assessment.id" class="assessment-column">
                     <div class="header-content">
                       <div class="assessment-title">{{ assessment.title }}</div>
                       <div class="assessment-info">
@@ -472,7 +514,7 @@
                         </button>
                       </div>
                     </td>
-                    <td v-for="assessment in assessments" :key="assessment.id" class="score-cell">
+                    <td v-for="assessment in filteredAssessments" :key="assessment.id" class="score-cell">
                       <div class="score-input-wrapper">
                         <input 
                           v-if="assessment.type === 'manual'"
@@ -514,7 +556,7 @@
                           <h4>{{ student.full_name }} - Detailed History</h4>
                         </div>
                         <div class="history-content">
-                          <div v-for="assessment in assessments" :key="assessment.id" class="history-item">
+                          <div v-for="assessment in filteredAssessments" :key="assessment.id" class="history-item">
                             <div class="history-assessment">
                               <div class="assessment-name">{{ assessment.title }}</div>
                               <div class="assessment-details">
@@ -807,6 +849,11 @@ const gradebookData = ref({})
 const submissions = ref([])
 const expandedStudent = ref(null)
 
+// Quarter management
+const gradingPeriods = ref([])
+const selectedQuarter = ref(null)
+const currentSchoolYear = ref(null)
+
 const showReviewModal = ref(false)
 const selectedSubmission = ref(null)
 const reviewQuestions = ref([])
@@ -823,16 +870,16 @@ const fullName = ref('Teacher')
 const showScrollTop = ref(false)
 
 const analyticsData = computed(() => {
-  if (!students.value.length || !assessments.value.length) {
+  if (!students.value.length || !filteredAssessments.value.length) {
     return { averageScore: 0, highestScore: 0, lowestScore: 0, submissionRate: 0 }
   }
 
   const scores = []
   let totalSubmissions = 0
-  let possibleSubmissions = students.value.length * assessments.value.length
+  let possibleSubmissions = students.value.length * filteredAssessments.value.length
 
   students.value.forEach(student => {
-    assessments.value.forEach(assessment => {
+    filteredAssessments.value.forEach(assessment => {
       const score = getStudentScore(student.id, assessment.id)
       if (score !== null && score !== undefined && score !== '') {
         const percentage = (score / assessment.max_score) * 100
@@ -852,6 +899,17 @@ const analyticsData = computed(() => {
 
 const correctAnswerCount = computed(() => reviewQuestions.value.filter(q => q.is_correct).length)
 const maxReviewScore = computed(() => reviewQuestions.value.reduce((sum, q) => sum + (q.points || 1), 0))
+
+// Filtered assessments by quarter
+const filteredAssessments = computed(() => {
+  if (!selectedQuarter.value) {
+    return assessments.value
+  }
+  
+  return assessments.value.filter(assessment => {
+    return assessment.grading_period_id === selectedQuarter.value.id
+  })
+})
 
 // Sorting state
 const sortBy = ref('surname') // 'surname', 'firstname', 'student-id'
@@ -1129,7 +1187,7 @@ const fetchGradebookData = async (sectionId) => {
   // Get REAL QUIZZES from database
   const { data: quizzesData, error: quizzesError } = await supabase
     .from('quizzes')
-    .select('id, title, number_of_questions, created_at, status')
+    .select('id, title, number_of_questions, created_at, status, grading_period_id')
     .eq('section_id', sectionId)
     .eq('status', 'published')
     .order('created_at', { ascending: true })
@@ -1147,7 +1205,8 @@ const fetchGradebookData = async (sectionId) => {
           title: quiz.title,
           type: 'quiz',
           max_score: quiz.number_of_questions || 1,
-          created_at: quiz.created_at
+          created_at: quiz.created_at,
+          grading_period_id: quiz.grading_period_id
         })
       })
     }
@@ -1156,7 +1215,7 @@ const fetchGradebookData = async (sectionId) => {
   // Get REAL ASSIGNMENTS from database
   const { data: assignmentsData, error: assignmentsError } = await supabase
     .from('assignments')
-    .select('id, title, total_points, created_at, status, published_at')
+    .select('id, title, total_points, created_at, status, published_at, grading_period_id')
     .eq('section_id', sectionId)
     .eq('status', 'published')
     .order('created_at', { ascending: true })
@@ -1174,7 +1233,8 @@ const fetchGradebookData = async (sectionId) => {
           title: assignment.title,
           type: 'assignment',
           max_score: assignment.total_points || 100,
-          created_at: assignment.published_at || assignment.created_at
+          created_at: assignment.published_at || assignment.created_at,
+          grading_period_id: assignment.grading_period_id
         })
       })
     }
@@ -1379,9 +1439,57 @@ const getStudentOptionLabel = (question) => {
   return selectedOption ? String.fromCharCode(65 + (selectedOption.option_number - 1)) : 'N/A'
 }
 
+// Fetch grading periods for current school year
+const fetchGradingPeriods = async () => {
+  try {
+    // Get active school year
+    const { data: schoolYear, error: syError } = await supabase
+      .from('school_years')
+      .select('id, year_name')
+      .eq('is_active', true)
+      .single()
+    
+    if (syError) {
+      console.log('No active school year found:', syError)
+      return
+    }
+    
+    currentSchoolYear.value = schoolYear
+    
+    // Get grading periods for this school year
+    const { data: periods, error: periodsError } = await supabase
+      .from('grading_periods')
+      .select('*')
+      .eq('school_year_id', schoolYear.id)
+      .order('period_number', { ascending: true })
+    
+    if (periodsError) {
+      console.error('Error fetching grading periods:', periodsError)
+      return
+    }
+    
+    gradingPeriods.value = periods || []
+    
+    // Auto-select active quarter or first quarter
+    const activeQuarter = periods?.find(p => p.is_active)
+    selectedQuarter.value = activeQuarter || (periods && periods.length > 0 ? periods[0] : null)
+    
+    console.log('📅 Grading periods loaded:', gradingPeriods.value)
+    console.log('✅ Selected quarter:', selectedQuarter.value?.period_name)
+  } catch (err) {
+    console.error('Error in fetchGradingPeriods:', err)
+  }
+}
+
+const selectQuarter = (quarter) => {
+  selectedQuarter.value = quarter
+  console.log('📅 Quarter selected:', quarter.period_name)
+}
+
 onMounted(async () => {
   const success = await getTeacherInfo()
   if (success) {
+    await fetchGradingPeriods()
     await fetchSubjects()
     window.addEventListener('scroll', () => showScrollTop.value = window.scrollY > 300)
   } else {
@@ -2514,6 +2622,250 @@ body, html {
   border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.2);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+/* Quarter Selection Card */
+.quarter-selection-card {
+  background: white;
+  border: 1.5px solid #3D8D7A;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(61, 141, 122, 0.1);
+}
+
+.dark .quarter-selection-card {
+  background: #23272b;
+  border: 1.5px solid #A3D1C6;
+  box-shadow: 0 2px 8px rgba(163, 209, 198, 0.1);
+}
+
+.quarter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.dark .quarter-header {
+  border-bottom-color: #3a3f44;
+}
+
+.quarter-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quarter-title svg {
+  color: #3D8D7A;
+}
+
+.dark .quarter-title svg {
+  color: #A3D1C6;
+}
+
+.quarter-title h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.dark .quarter-title h3 {
+  color: #f9fafb;
+}
+
+.school-year-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #3D8D7A 0%, #2d6d5f 100%);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(61, 141, 122, 0.2);
+}
+
+.dark .school-year-badge {
+  background: linear-gradient(135deg, #A3D1C6 0%, #8bb5a8 100%);
+  color: #1f2937;
+}
+
+.quarter-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.quarter-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quarter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.15);
+  border-color: #3D8D7A;
+}
+
+.quarter-btn.active {
+  background: linear-gradient(135deg, #3D8D7A 0%, #2d6d5f 100%);
+  border-color: #3D8D7A;
+  color: white;
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.3);
+}
+
+.quarter-btn.current:not(.active) {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.quarter-btn.completed:not(.active) {
+  opacity: 0.7;
+}
+
+.dark .quarter-btn {
+  background: #2d3236;
+  border-color: #3a3f44;
+}
+
+.dark .quarter-btn:hover {
+  border-color: #A3D1C6;
+  box-shadow: 0 4px 12px rgba(163, 209, 198, 0.15);
+}
+
+.dark .quarter-btn.active {
+  background: linear-gradient(135deg, #A3D1C6 0%, #8bb5a8 100%);
+  border-color: #A3D1C6;
+  color: #1f2937;
+}
+
+.dark .quarter-btn.current:not(.active) {
+  border-color: #34d399;
+  background: #064e3b;
+}
+
+.quarter-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(61, 141, 122, 0.1);
+  border-radius: 10px;
+}
+
+.quarter-btn.active .quarter-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.quarter-icon svg {
+  color: #3D8D7A;
+}
+
+.quarter-btn.active .quarter-icon svg {
+  color: white;
+}
+
+.dark .quarter-icon {
+  background: rgba(163, 209, 198, 0.1);
+}
+
+.dark .quarter-icon svg {
+  color: #A3D1C6;
+}
+
+.dark .quarter-btn.active .quarter-icon svg {
+  color: #1f2937;
+}
+
+.quarter-content {
+  flex: 1;
+  text-align: left;
+}
+
+.quarter-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #1f2937;
+}
+
+.quarter-btn.active .quarter-name {
+  color: white;
+}
+
+.dark .quarter-name {
+  color: #f9fafb;
+}
+
+.dark .quarter-btn.active .quarter-name {
+  color: #1f2937;
+}
+
+.quarter-dates {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.quarter-btn.active .quarter-dates {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dark .quarter-dates {
+  color: #9ca3af;
+}
+
+.dark .quarter-btn.active .quarter-dates {
+  color: rgba(31, 41, 55, 0.8);
+}
+
+.active-badge,
+.status-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.active-badge {
+  background: #10b981;
+  color: white;
+}
+
+.status-badge.completed {
+  background: #6b7280;
+  color: white;
+}
+
+.status-badge.upcoming {
+  background: #f59e0b;
+  color: white;
+}
+
+.quarter-btn.active .active-badge,
+.quarter-btn.active .status-badge {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
 }
 
 .gradebook-container {

@@ -212,6 +212,16 @@
               <p class="header-subtitle">
                 {{ selectedSection ? `Viewing: ${getSelectedSectionName()}` : 'Monitor and analyze student performance across all sections' }}
               </p>
+              <div v-if="currentSchoolYear && currentQuarter" class="academic-info">
+                <span class="academic-year">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  S.Y. {{ currentSchoolYear.year_name }}
+                </span>
+                <span class="quarter-badge">{{ currentQuarter.period_name }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -627,6 +637,11 @@ export default {
     const teacherId = ref<string>('')
     const showProfileDropdown = ref(false)
     const fullName = ref('Teacher')
+    
+    // School year and quarter
+    const currentSchoolYear = ref<any>(null)
+    const gradingPeriods = ref<any[]>([])
+    const currentQuarter = ref<any>(null)
     
     // Notification dropdown states
     const showNotifDropdown = ref(false)
@@ -1078,6 +1093,48 @@ export default {
       }
     }
 
+    // Fetch grading periods
+    const fetchGradingPeriods = async () => {
+      try {
+        // Get active school year
+        const { data: schoolYear, error: syError } = await supabase
+          .from('school_years')
+          .select('id, year_name')
+          .eq('is_active', true)
+          .single()
+        
+        if (syError) {
+          console.log('No active school year found:', syError)
+          return
+        }
+        
+        currentSchoolYear.value = schoolYear
+        
+        // Get grading periods for this school year
+        const { data: periods, error: periodsError } = await supabase
+          .from('grading_periods')
+          .select('*')
+          .eq('school_year_id', schoolYear.id)
+          .order('period_number', { ascending: true })
+        
+        if (periodsError) {
+          console.error('Error fetching grading periods:', periodsError)
+          return
+        }
+        
+        gradingPeriods.value = periods || []
+        
+        // Auto-select active quarter
+        const activeQuarter = periods?.find(p => p.is_active)
+        currentQuarter.value = activeQuarter || (periods && periods.length > 0 ? periods[0] : null)
+        
+        console.log('📅 School Year:', currentSchoolYear.value?.year_name)
+        console.log('📅 Current Quarter:', currentQuarter.value?.period_name)
+      } catch (err) {
+        console.error('Error in fetchGradingPeriods:', err)
+      }
+    }
+
     // Fetch all analytics data
     const fetchData = async () => {
       loading.value = true
@@ -1318,6 +1375,7 @@ export default {
     // Lifecycle
     onMounted(async () => {
       initDarkMode()
+      await fetchGradingPeriods()
       await fetchData()
       await setupRealtimeSubscriptions()
     })
@@ -1409,6 +1467,9 @@ export default {
       showNotifDropdown,
       notifications,
       fullName,
+      currentSchoolYear,
+      gradingPeriods,
+      currentQuarter,
       overallStats,
       performanceDistribution,
       filteredStudents,
@@ -1524,6 +1585,22 @@ body, html {
 
 .dark .dashboard-container {
   background: #0f172a;
+}
+
+.dark .academic-year {
+  color: #f9fafb;
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+  border-color: #4b5563;
+}
+
+.dark .academic-year svg {
+  color: #20c997;
+}
+
+.dark .quarter-badge {
+  background: linear-gradient(135deg, #20c997 0%, #17a085 100%);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(32, 201, 151, 0.3);
 }
 
 /* Sidebar Navigation - Simple Outlined Icons Only, Single Color, Active Highlight */
@@ -2074,6 +2151,48 @@ body, html {
 .header-subtitle {
   font-size: 0.95rem;
   color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.academic-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.academic-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.academic-year svg {
+  width: 16px;
+  height: 16px;
+  color: #3D8D7A;
+}
+
+.quarter-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #3D8D7A 0%, #2d6d5f 100%);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(61, 141, 122, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .section-filter {

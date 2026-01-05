@@ -87,6 +87,7 @@
                   <div class="profile-details">
                     <h4>{{ fullName }}</h4>
                     <p>Teacher</p>
+                    <p class="school-year-display">S.Y. {{ schoolYear }}</p>
                   </div>
                 </div>
               </div>
@@ -208,6 +209,7 @@
             <span v-else>Welcome back, Loading...</span>
           </h1>
           <p class="welcome-subtitle">Here's what's happening with your classes today</p>
+          <p class="school-year-badge">School Year: {{ schoolYear }}</p>
         </div>
         <div class="quick-actions">
           <router-link to="/teacher/create-quiz" class="quick-action-btn primary">
@@ -447,6 +449,7 @@ const showAnalyticsLabel = ref(false)
 const showMessagesLabel = ref(false)
 const showScrollTop = ref(false)
 const fullName = ref('Loading...')
+const schoolYear = ref('Loading...')
 const isLoggingOut = ref(false)
 const isLoadingName = ref(true)
 const totalClasses = ref(0)
@@ -463,6 +466,7 @@ let quizSubscription = null
 let assignmentSubscription = null
 let messageSubscription = null
 let enrollmentSubscription = null
+let schoolYearSubscription = null
 let statsIntervalId = null
 let notifIntervalId = null
 
@@ -625,8 +629,9 @@ const loadTeacherProfile = async () => {
     console.log('   Profile ID:', profile.id)
     console.log('   Role:', profile.role)
     
-    if (profile.role !== 'teacher') {
-      console.error('❌ Wrong role:', profile.role)
+    // Allow both 'teacher' role and 'admin' role (if admin has teacher record)
+    if (profile.role !== 'teacher' && profile.role !== 'admin') {
+      console.error('❌ Wrong role:', profile.role, '- Must be teacher or admin')
       fullName.value = 'Teacher'
       isLoadingName.value = false
       router.replace('/login')
@@ -689,6 +694,37 @@ const loadTeacherProfile = async () => {
     fullName.value = 'Teacher'
     isLoadingName.value = false
     return false
+  }
+}
+
+const loadSchoolYear = async () => {
+  try {
+    console.log('📅 Loading active school year...')
+    
+    const { data: activeYear, error: yearError } = await supabase
+      .from('school_years')
+      .select('year_name')
+      .eq('is_active', true)
+      .maybeSingle()
+    
+    if (yearError) {
+      console.error('❌ Error loading school year:', yearError)
+      schoolYear.value = 'Not Set'
+      return
+    }
+    
+    if (!activeYear) {
+      console.warn('⚠️ No active school year found')
+      schoolYear.value = 'Not Set'
+      return
+    }
+    
+    schoolYear.value = activeYear.year_name
+    console.log('✅ School year loaded:', schoolYear.value)
+    
+  } catch (error) {
+    console.error('❌ Error in loadSchoolYear:', error)
+    schoolYear.value = 'Not Set'
   }
 }
 
@@ -1114,6 +1150,7 @@ onMounted(async () => {
   const profileLoaded = await loadTeacherProfile()
   
   if (profileLoaded) {
+    await loadSchoolYear()
     await loadDashboardStats()
     await loadNotifications()
     
@@ -1218,6 +1255,20 @@ onMounted(async () => {
         }
       })
       .subscribe()
+    
+    // School Year Subscription - Listen for changes to active school year
+    schoolYearSubscription = supabase
+      .channel('school_years_channel')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'school_years',
+        filter: `is_active=eq.true`
+      }, (payload) => {
+        console.log('📅 School year updated:', payload)
+        loadSchoolYear()
+      })
+      .subscribe()
   }
 })
 
@@ -1240,6 +1291,9 @@ onUnmounted(() => {
   }
   if (enrollmentSubscription) {
     supabase.removeChannel(enrollmentSubscription)
+  }
+  if (schoolYearSubscription) {
+    supabase.removeChannel(schoolYearSubscription)
   }
 })
 </script>
@@ -1626,6 +1680,16 @@ onUnmounted(() => {
   opacity: 0.9;
 }
 
+.profile-details .school-year-display {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #3D8D7A;
+  margin-top: 0.25rem;
+  opacity: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
 .dropdown-menu {
   padding: 0.5rem;
 }
@@ -1775,6 +1839,20 @@ onUnmounted(() => {
 .welcome-subtitle {
   font-size: 0.95rem;
   color: #64748b;
+}
+
+.school-year-badge {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #3D8D7A, #5FB3A0);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(61, 141, 122, 0.2);
 }
 
 .quick-actions {
@@ -2452,6 +2530,53 @@ onUnmounted(() => {
   }
   50% {
     transform: scale(1.2);
+  }
+}
+
+/* Responsive Styles for Mobile */
+@media (max-width: 768px) {
+  .school-year-badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    margin-top: 0.5rem;
+  }
+  
+  .profile-details .school-year-display {
+    font-size: 0.7rem;
+  }
+  
+  .welcome-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .welcome-content {
+    margin-bottom: 1rem;
+  }
+  
+  .quick-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .quick-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .school-year-badge {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.7rem;
+  }
+  
+  .welcome-content h1 {
+    font-size: 1.5rem;
+  }
+  
+  .welcome-subtitle {
+    font-size: 0.85rem;
   }
 }
 </style>

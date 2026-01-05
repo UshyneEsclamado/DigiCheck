@@ -305,6 +305,85 @@
               </div>
             </div>
 
+            <!-- ✅ BULK ASSIGNMENT - Section Selection -->
+            <div class="form-group bulk-section-selector">
+              <div class="section-selector-header">
+                <label class="form-label">
+                  <span class="label-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                      <rect x="3" y="7" width="18" height="13" rx="2" />
+                      <path d="M3 7l9-4 9 4" />
+                    </svg>
+                  </span>
+                  Assign to Sections *
+                  <span v-if="getSelectedSectionsCount > 0" class="selected-count-badge">
+                    {{ getSelectedSectionsCount }} selected
+                  </span>
+                </label>
+                
+                <label class="checkbox-label select-all-checkbox">
+                  <input 
+                    type="checkbox" 
+                    v-model="allSectionsSelected" 
+                    @change="toggleAllSections"
+                  />
+                  <span>Select All Sections</span>
+                </label>
+              </div>
+
+              <!-- Academic Info Tags -->
+              <div v-if="currentSchoolYear" class="academic-info-tags">
+                <span class="info-tag school-year-tag">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                    <path d="M8 2v4m8-4v4M4 10h16"/>
+                  </svg>
+                  {{ currentSchoolYear.year_name }}
+                </span>
+              </div>
+
+              <!-- Sections Grid -->
+              <div class="sections-grid" v-if="teacherSections.length > 0">
+                <div 
+                  v-for="section in teacherSections" 
+                  :key="section.id"
+                  class="section-card"
+                  :class="{ 'selected': isSectionSelected(section.id) }"
+                  @click="toggleSectionSelection(section.id)"
+                >
+                  <div class="section-card-header">
+                    <div class="section-checkbox">
+                      <input 
+                        type="checkbox" 
+                        :checked="isSectionSelected(section.id)"
+                        @click.stop="toggleSectionSelection(section.id)"
+                      />
+                    </div>
+                    <div class="section-info">
+                      <h4 class="section-name">{{ section.name }}</h4>
+                      <p class="section-code">{{ section.section_code }}</p>
+                    </div>
+                  </div>
+                  <div class="section-card-footer">
+                    <span class="grade-badge">Grade {{ section.grade_level }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-else class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2">
+                  <rect x="3" y="7" width="18" height="13" rx="2" />
+                  <path d="M3 7l9-4 9 4" />
+                </svg>
+                <p>No sections found for this subject</p>
+                <p style="font-size: 0.75rem; margin-top: 0.5rem;">
+                  Subject ID: {{ subject.id }}<br>
+                  Sections Count: {{ teacherSections.length }}
+                </p>
+              </div>
+            </div>
+
             <!-- Attachments Section -->
             <div class="form-group attachments-section">
               <label class="form-label">
@@ -495,6 +574,22 @@ const gradeLevel = ref(route.query.gradeLevel || '')
 const teacherId = ref(null)
 const fullName = ref('Teacher')
 
+// ✅ BULK ASSIGNMENT FEATURE - Section Management (matching CreateQuiz.vue)
+const subject = ref({
+  id: '',
+  name: 'Subject'
+})
+
+const section = ref({
+  id: '',
+  name: ''
+})
+
+const teacherSections = ref([])
+const selectedSections = ref([])
+const allSectionsSelected = ref(false)
+const currentSchoolYear = ref(null)
+
 // Form data
 const formData = ref({
   title: '',
@@ -600,6 +695,146 @@ const loadTeacherInfo = async () => {
     return false
   }
 }
+
+// ✅ BULK ASSIGNMENT - Fetch all sections for this subject (matching CreateQuiz.vue)
+const fetchTeacherSections = async () => {
+  try {
+    if (!subject.value.id) {
+      console.log('⚠️ No subject ID available yet');
+      return;
+    }
+
+    console.log('📚 Fetching sections for subject:', subject.value.id);
+
+    // Fetch all sections that belong to the same subject
+    const { data: sectionsData, error } = await supabase
+      .from('sections')
+      .select(`
+        id,
+        name,
+        section_code,
+        subject_id,
+        subjects!inner (
+          id,
+          name,
+          grade_level
+        )
+      `)
+      .eq('subject_id', subject.value.id)
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('❌ Database error:', error);
+      throw error;
+    }
+
+    console.log('📊 Raw data from database:', sectionsData);
+
+    teacherSections.value = sectionsData.map(s => ({
+      id: s.id,
+      name: s.name,
+      section_code: s.section_code,
+      subject_id: s.subject_id,
+      grade_level: s.subjects.grade_level,  // ✅ Get from subjects table
+      subject_name: s.subjects.name
+    }));
+
+    console.log(`✅ Found ${teacherSections.value.length} sections for subject "${subject.value.name}"`);
+    console.log('📋 Sections:', teacherSections.value);
+    
+    // Auto-select current section if we came from a specific section
+    if (section.value.id) {
+      selectedSections.value = [section.value.id];
+      console.log(`✅ Auto-selected current section: ${section.value.name}`);
+    }
+  } catch (error) {
+    console.error('❌ Error in fetchTeacherSections:', error);
+    errorMessage.value = 'Failed to load sections: ' + error.message;
+  }
+};
+
+// ✅ BULK ASSIGNMENT - Fetch current school year
+const fetchCurrentSchoolYear = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('school_years')
+      .select('*')
+      .eq('is_current', true)
+      .single()
+
+    if (error) throw error
+    
+    currentSchoolYear.value = data
+    console.log('✅ Current school year:', data?.year_name)
+  } catch (error) {
+    console.error('❌ Error fetching school year:', error)
+  }
+}
+
+// ✅ BULK ASSIGNMENT - Toggle all sections selection
+const toggleAllSections = () => {
+  if (allSectionsSelected.value) {
+    selectedSections.value = []
+    allSectionsSelected.value = false
+  } else {
+    selectedSections.value = teacherSections.value.map(s => s.id)
+    allSectionsSelected.value = true
+  }
+}
+
+// ✅ BULK ASSIGNMENT - Toggle individual section selection
+const toggleSectionSelection = (sectionId) => {
+  const index = selectedSections.value.indexOf(sectionId)
+  if (index > -1) {
+    selectedSections.value.splice(index, 1)
+  } else {
+    selectedSections.value.push(sectionId)
+  }
+  
+  // Update allSectionsSelected state
+  allSectionsSelected.value = selectedSections.value.length === teacherSections.value.length
+}
+
+// ✅ BULK ASSIGNMENT - Check if section is selected
+const isSectionSelected = (sectionId) => {
+  return selectedSections.value.includes(sectionId)
+}
+
+// ✅ BULK ASSIGNMENT - Get selected sections count
+const getSelectedSectionsCount = computed(() => {
+  return selectedSections.value.length
+})
+
+// ✅ Load route parameters (matching CreateQuiz.vue - must run BEFORE fetchTeacherSections)
+const loadRouteParams = () => {
+  const subjectIdParam = route.params.subjectId;
+  const sectionIdParam = route.params.sectionId;
+  const subjectNameParam = route.query.subjectName || 'Subject';
+  const sectionNameParam = route.query.sectionName || '';
+
+  if (!subjectIdParam || !sectionIdParam) {
+    console.error('❌ Missing required route parameters');
+    return false;
+  }
+
+  subject.value = { id: subjectIdParam, name: subjectNameParam };
+  section.value = { id: sectionIdParam, name: sectionNameParam };
+  
+  // Also set the old refs for compatibility
+  subjectId.value = subjectIdParam;
+  sectionId.value = sectionIdParam;
+  subjectName.value = subjectNameParam;
+  sectionName.value = sectionNameParam;
+  gradeLevel.value = route.query.gradeLevel || '';
+
+  console.log('✅ Route params loaded:', { 
+    subject: subject.value, 
+    section: section.value 
+  });
+  
+  return true;
+};
 
 // Methods
 const getSubjectColor = () => {
@@ -712,9 +947,14 @@ const createAssignment = async () => {
       throw new Error('Due date is required')
     }
 
+    // ✅ BULK ASSIGNMENT - Validate section selection
+    if (selectedSections.value.length === 0) {
+      throw new Error('Please select at least one section')
+    }
+
+    console.log('📋 Selected sections:', selectedSections.value.length)
+
     // ✅ FIXED: Convert datetime-local to UTC for database storage
-    // The datetime-local input gives us the local time (PH time)
-    // We need to convert it to UTC for proper storage
     const localDueDate = new Date(formData.value.due_date)
     const utcDueDate = localDueDate.toISOString()
     
@@ -723,15 +963,16 @@ const createAssignment = async () => {
     console.log('  Parsed local:', localDueDate.toString())
     console.log('  UTC for DB:', utcDueDate)
 
-    // Create assignment record
+    // ✅ BULK ASSIGNMENT - Create assignment with section_id = null
     const assignmentData = {
       teacher_id: teacherId.value,
       subject_id: subjectId.value,
-      section_id: sectionId.value,
+      section_id: null, // ← NULL for bulk assignments
+      school_year_id: currentSchoolYear.value?.id || null,
       title: formData.value.title.trim(),
       description: formData.value.description?.trim() || null,
       total_points: formData.value.total_points,
-      due_date: utcDueDate, // ✅ Store as UTC
+      due_date: utcDueDate,
       assignment_type: formData.value.assignment_type,
       submission_type: formData.value.submission_type,
       allow_late_submission: formData.value.allow_late_submission,
@@ -755,6 +996,25 @@ const createAssignment = async () => {
     }
 
     console.log('✅ Assignment created successfully:', assignment)
+
+    // ✅ BULK ASSIGNMENT - Direct insert to bulk_assignments table
+    console.log('📋 Assigning to', selectedSections.value.length, 'sections...')
+    
+    const bulkAssignmentData = selectedSections.value.map(sectionId => ({
+      assignment_id: assignment.id,
+      section_id: sectionId
+    }))
+
+    const { error: bulkError } = await supabase
+      .from('bulk_assignments')
+      .insert(bulkAssignmentData)
+
+    if (bulkError) {
+      console.error('❌ Bulk assignment error:', bulkError)
+      throw new Error('Failed to assign to sections: ' + bulkError.message)
+    }
+
+    console.log('✅ Assignment assigned to', selectedSections.value.length, 'sections')
 
     // Upload files if any
     if (selectedFiles.value.length > 0) {
@@ -862,19 +1122,45 @@ const logout = () => {
 onMounted(async () => {
   console.log('🚀 Component mounted')
   
-  await loadTeacherInfo()
-  
-  // ✅ Set default due date to TODAY at current time
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  const hours = String(today.getHours()).padStart(2, '0')
-  const minutes = String(today.getMinutes()).padStart(2, '0')
-  formData.value.due_date = `${year}-${month}-${day}T${hours}:${minutes}`
-  
-  console.log('📅 Set default due date to TODAY (PH time):', formData.value.due_date)
-  console.log('✅ Component ready!')
+  try {
+    // Step 1: Load teacher info first
+    const teacherLoaded = await loadTeacherInfo()
+    if (!teacherLoaded) {
+      console.error('❌ Failed to load teacher info')
+      router.push('/login')
+      return
+    }
+
+    // Step 2: Load route params BEFORE fetching sections
+    const paramsLoaded = loadRouteParams()
+    if (!paramsLoaded) {
+      console.error('❌ Failed to load route params')
+      alert('Missing information. Redirecting...')
+      router.push('/teacher/subjects')
+      return
+    }
+    
+    // Step 3: Fetch current school year
+    await fetchCurrentSchoolYear()
+    
+    // Step 4: Fetch teacher sections (AFTER route params are loaded)
+    await fetchTeacherSections()
+    
+    // Step 5: Set default due date to TODAY at current time
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    const hours = String(today.getHours()).padStart(2, '0')
+    const minutes = String(today.getMinutes()).padStart(2, '0')
+    formData.value.due_date = `${year}-${month}-${day}T${hours}:${minutes}`
+    
+    console.log('📅 Set default due date to TODAY (PH time):', formData.value.due_date)
+    console.log('✅ Component initialization complete!')
+  } catch (error) {
+    console.error('❌ Initialization error:', error)
+    alert('Failed to initialize page. Please refresh and try again.')
+  }
 })
 </script>
 
@@ -1736,4 +2022,222 @@ onMounted(async () => {
   scrollbar-width: thin;
   scrollbar-color: #10b981 #f1f5f9;
 }
+
+/* ============================================ */
+/* ✅ BULK ASSIGNMENT - Section Selector Styles */
+/* ============================================ */
+
+.bulk-section-selector {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.section-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.select-all-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #10b981;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.select-all-checkbox:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.select-all-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+.selected-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+/* Academic Info Tags */
+.academic-info-tags {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.info-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+
+.info-tag svg {
+  flex-shrink: 0;
+}
+
+.school-year-tag {
+  background: #f0f9ff;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+
+/* Sections Grid */
+.sections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.section-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-card:hover {
+  border-color: #10b981;
+  background: #f0fdfa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.section-card.selected {
+  border-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.05));
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.section-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.section-checkbox {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.section-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+.section-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.3;
+}
+
+.section-code {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 500;
+}
+
+.section-card-footer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  margin-top: 1rem;
+}
+
+.empty-state svg {
+  margin: 0 auto 1rem;
+}
+
+.empty-state p {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Responsive for Bulk Assignment */
+@media (max-width: 768px) {
+  .section-selector-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .select-all-checkbox {
+    justify-content: center;
+  }
+
+  .sections-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
+

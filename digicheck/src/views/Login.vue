@@ -405,13 +405,16 @@ export default {
 
         console.log('✓ Profile loaded, Role:', profile.role);
 
-        // Route based on role - simplified without teacher record check
+        // Route based on role - NOW WITH ADMIN SUPPORT
         if (profile.role === 'student') {
           console.log('→ Redirecting to student dashboard');
           await this.$router.replace('/student-dashboard');
         } else if (profile.role === 'teacher') {
           console.log('→ Redirecting to teacher dashboard');
           await this.$router.replace('/teacher/dashboard');
+        } else if (profile.role === 'admin') {
+          console.log('→ Redirecting to admin dashboard');
+          await this.$router.replace('/admin/dashboard');
         } else {
           console.error('Invalid role:', profile.role);
           throw new Error('Invalid account type: ' + profile.role);

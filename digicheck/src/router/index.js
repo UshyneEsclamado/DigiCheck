@@ -32,7 +32,7 @@ import Gradebook from '../views/teacher/Gradebook.vue'
 import CreateAssignment from '../views/teacher/CreateAssignment.vue'
 import StudentSubmissions from '../views/teacher/StudentSubmissions.vue'
 
-// Student subfolder components - FIXED: Removed duplicates
+// Student subfolder components
 import Home from '../views/student/Home.vue'
 import Subjects from '../views/student/Subjects.vue'
 import Messages from '../views/student/Messages.vue'
@@ -41,6 +41,15 @@ import Settings from '../views/student/Settings.vue'
 import TakeQuiz from '../views/student/TakeQuiz.vue'
 import TakeAssignments from '../views/student/TakeAssignments.vue'
 import StudentGrades from '../views/student/Grades.vue'
+
+// Admin components - NEW
+import AdminDashboard from '../views/admin/AdminDashboard.vue'
+import StudentManagement from '../views/admin/StudentManagement.vue'
+import TeacherManagement from '../views/admin/TeacherManagement.vue'
+import EnrollmentManagement from '../views/admin/EnrollmentManagement.vue'
+import SchoolYearManagement from '../views/admin/SchoolYearManagement.vue'
+import GradingPeriodManagement from '../views/admin/GradingPeriodManagement.vue'
+import UserAccountCreation from '../views/admin/UserAccountCreation.vue'
 
 const routes = [
   {
@@ -151,7 +160,6 @@ const routes = [
         component: UploadAssessment,
         meta: { requiresAuth: true, role: 'teacher' }
       },
-      
       {
         path: 'create-quiz/:subjectId/:sectionId',
         name: 'CreateQuiz',
@@ -198,7 +206,7 @@ const routes = [
       }
     ]
   },
-  // Student Dashboard Routes - FIXED: Removed duplicate calendar route
+  // Student Dashboard Routes
   {
     path: '/student',
     name: 'StudentLayout',
@@ -250,6 +258,53 @@ const routes = [
         component: StudentGrades
       }
     ]
+  },
+  // Admin Dashboard Routes
+  {
+    path: '/admin',
+    redirect: '/admin/dashboard'
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/students',
+    name: 'StudentManagement',
+    component: StudentManagement,
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/teachers',
+    name: 'TeacherManagement',
+    component: TeacherManagement,
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/enrollment',
+    name: 'EnrollmentManagement',
+    component: EnrollmentManagement,
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/school-years',
+    name: 'SchoolYearManagement',
+    component: SchoolYearManagement,
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/grading-periods',
+    name: 'GradingPeriodManagement',
+    component: GradingPeriodManagement,
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/create-account',
+    name: 'UserAccountCreation',
+    component: UserAccountCreation,
+    meta: { requiresAuth: true, role: 'admin' }
   },
   // Legacy student dashboard route (for backward compatibility)
   {
@@ -348,9 +403,31 @@ router.beforeEach(async (to, from, next) => {
       }
 
       // Check role match
+      // Allow admin to access teacher routes if they have a teacher record
       if (userRole !== to.meta.role) {
+        // Special case: Allow admins with teacher records to access teacher routes
+        if (userRole === 'admin' && to.meta.role === 'teacher') {
+          // Check if admin has teacher record
+          const { data: teacherRecord, error: teacherError } = await supabase
+            .from('teachers')
+            .select('id')
+            .eq('profile_id', (await supabase.from('profiles').select('id').eq('auth_user_id', session.user.id).single()).data?.id)
+            .eq('is_active', true)
+            .maybeSingle()
+          
+          if (!teacherError && teacherRecord) {
+            // Admin has teacher record, allow access
+            console.log('✓ Admin has teacher record, allowing access to teacher route')
+            next()
+            return
+          }
+        }
+        
         console.log('Role mismatch:', userRole, '!=', to.meta.role)
-        const redirectPath = userRole === 'student' ? '/student/dashboard' : '/teacher/dashboard'
+        // Updated to include admin redirect
+        const redirectPath = userRole === 'student' ? '/student/dashboard' : 
+                           userRole === 'teacher' ? '/teacher/dashboard' : 
+                           '/admin/dashboard'
         next(redirectPath)
         return
       }
