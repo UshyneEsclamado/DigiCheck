@@ -172,7 +172,7 @@
                 <h3 class="subject-title">{{ subject.name }}</h3>
                 <p class="subject-meta">
                   <span class="subject-code">{{ subject.code }}</span>
-                  <span class="separator">•</span>
+                  <span class="separator">�</span>
                   <span class="subject-section">{{ subject.section }}</span>
                 </p>
                 <p class="subject-instructor">
@@ -298,9 +298,9 @@
             </div>
             <!-- Floating Elements -->
             <div class="floating-elements">
-              <div class="element element-1">📚</div>
-              <div class="element element-2">✨</div>
-              <div class="element element-3">📝</div>
+              <div class="element element-1">??</div>
+              <div class="element element-2">?</div>
+              <div class="element element-3">??</div>
             </div>
           </div>
           
@@ -461,7 +461,7 @@ export default {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
-          console.error('❌ Session error:', sessionError)
+          console.error('? Session error:', sessionError)
           throw sessionError
         }
         
@@ -479,7 +479,7 @@ export default {
           .maybeSingle()
         
         if (profileError) {
-          console.error('❌ Error getting profile:', profileError)
+          console.error('? Error getting profile:', profileError)
           throw profileError
         }
 
@@ -496,7 +496,7 @@ export default {
             .single()
 
           if (createError) {
-            console.error('❌ Failed to create profile:', createError)
+            console.error('? Failed to create profile:', createError)
             throw createError
           }
 
@@ -518,7 +518,7 @@ export default {
           .maybeSingle()
 
         if (studentError && studentError.code !== 'PGRST116') {
-          console.error('❌ Error getting student info:', studentError)
+          console.error('? Error getting student info:', studentError)
           throw studentError
         }
 
@@ -538,7 +538,7 @@ export default {
             .single()
 
           if (createStudentError) {
-            console.error('❌ Failed to create student record:', createStudentError)
+            console.error('? Failed to create student record:', createStudentError)
             throw createStudentError
           }
 
@@ -556,7 +556,7 @@ export default {
         return true
 
       } catch (error) {
-        console.error('❌ Auth initialization error:', error)
+        console.error('? Auth initialization error:', error)
         alert(`Authentication error: ${error.message || 'Unknown error'}`)
         await this.$router.push('/login')
         return false
@@ -566,12 +566,12 @@ export default {
     calculateSchoolYear() {
       // DEPRECATED: This method is now replaced by fetchSchoolYearAndQuarter()
       // which fetches real-time data from the database
-      console.log('⚠️ calculateSchoolYear() is deprecated - use fetchSchoolYearAndQuarter()');
+      console.log('?? calculateSchoolYear() is deprecated - use fetchSchoolYearAndQuarter()');
     },
 
     async fetchSchoolYearAndQuarter() {
       try {
-        console.log('📅 Fetching active school year and quarter from database...');
+        console.log('?? Fetching active school year and quarter from database...');
         
         // Fetch active school year
         const { data: activeSchoolYear, error: schoolYearError } = await supabase
@@ -581,11 +581,11 @@ export default {
           .maybeSingle();
 
         if (schoolYearError) {
-          console.error('❌ Error fetching school year:', schoolYearError);
+          console.error('? Error fetching school year:', schoolYearError);
           this.currentSchoolYear = 'N/A';
         } else if (activeSchoolYear) {
           this.currentSchoolYear = activeSchoolYear.year_name;
-          console.log('✅ Active School Year:', this.currentSchoolYear);
+          console.log('? Active School Year:', this.currentSchoolYear);
 
           // Fetch active grading period for this school year
           const { data: activeGradingPeriod, error: gradingPeriodError } = await supabase
@@ -596,24 +596,24 @@ export default {
             .maybeSingle();
 
           if (gradingPeriodError) {
-            console.error('❌ Error fetching grading period:', gradingPeriodError);
+            console.error('? Error fetching grading period:', gradingPeriodError);
             this.currentQuarter = 'N/A';
           } else if (activeGradingPeriod) {
             this.currentQuarter = activeGradingPeriod.period_name;
-            console.log('✅ Active Quarter:', this.currentQuarter);
+            console.log('? Active Quarter:', this.currentQuarter);
           } else {
-            console.warn('⚠️ No active grading period found');
+            console.warn('?? No active grading period found');
             this.currentQuarter = 'No Active Quarter';
           }
         } else {
-          console.warn('⚠️ No active school year found');
+          console.warn('?? No active school year found');
           this.currentSchoolYear = 'No Active Year';
           this.currentQuarter = 'N/A';
         }
 
-        console.log(`📅 School Year: ${this.currentSchoolYear}, Quarter: ${this.currentQuarter}`);
+        console.log(`?? School Year: ${this.currentSchoolYear}, Quarter: ${this.currentQuarter}`);
       } catch (error) {
-        console.error('❌ Error in fetchSchoolYearAndQuarter:', error);
+        console.error('? Error in fetchSchoolYearAndQuarter:', error);
         this.currentSchoolYear = 'Error';
         this.currentQuarter = 'Error';
       }
@@ -621,7 +621,7 @@ export default {
 
     setupSchoolYearSubscription() {
       try {
-        console.log('🔔 Setting up real-time subscription for school year updates...');
+        console.log('?? Setting up real-time subscription for school year updates...');
 
         // Subscribe to school_years table changes
         this.schoolYearSubscription = supabase
@@ -634,13 +634,13 @@ export default {
               table: 'school_years'
             },
             (payload) => {
-              console.log('🔔 School year changed:', payload);
+              console.log('?? School year changed:', payload);
               // Refetch school year and quarter when changes occur
               this.fetchSchoolYearAndQuarter();
             }
           )
           .subscribe((status) => {
-            console.log('🔔 School year subscription status:', status);
+            console.log('?? School year subscription status:', status);
           });
 
         // Subscribe to grading_periods table changes
@@ -654,34 +654,34 @@ export default {
               table: 'grading_periods'
             },
             (payload) => {
-              console.log('🔔 Grading period changed:', payload);
+              console.log('?? Grading period changed:', payload);
               // Refetch school year and quarter when changes occur
               this.fetchSchoolYearAndQuarter();
             }
           )
           .subscribe((status) => {
-            console.log('🔔 Grading period subscription status:', status);
+            console.log('?? Grading period subscription status:', status);
           });
 
-        console.log('✅ Real-time subscriptions established');
+        console.log('? Real-time subscriptions established');
       } catch (error) {
-        console.error('❌ Error setting up school year subscription:', error);
+        console.error('? Error setting up school year subscription:', error);
       }
     },
 
     cleanupSchoolYearSubscription() {
-      console.log('🔄 Cleaning up school year subscriptions...');
+      console.log('?? Cleaning up school year subscriptions...');
       
       if (this.schoolYearSubscription) {
         supabase.removeChannel(this.schoolYearSubscription);
         this.schoolYearSubscription = null;
-        console.log('✅ School year subscription cleaned up');
+        console.log('? School year subscription cleaned up');
       }
       
       if (this.gradingPeriodSubscription) {
         supabase.removeChannel(this.gradingPeriodSubscription);
         this.gradingPeriodSubscription = null;
-        console.log('✅ Grading period subscription cleaned up');
+        console.log('? Grading period subscription cleaned up');
       }
     },
 
@@ -745,17 +745,17 @@ export default {
     },
 
     navigateToSubject(subject) {
-      console.log('📌 navigateToSubject called:', subject)
+      console.log('?? navigateToSubject called:', subject)
       
       if (!subject || !subject.id || !subject.sectionId) {
-        console.error('❌ Invalid subject data:', subject)
+        console.error('? Invalid subject data:', subject)
         alert('Unable to navigate. Please refresh the page and try again.')
         return
       }
       
       // Navigate to grades page for this subject
       this.$router.push(`/student/grades/${subject.id}/${subject.sectionId}`).catch(err => {
-        console.error('❌ Navigation error:', err)
+        console.error('? Navigation error:', err)
       })
     },
 
@@ -1007,10 +1007,10 @@ export default {
         })
         
         this.subjects = newSubjects
-        console.log('✅ Loaded', this.subjects.length, 'subjects')
+        console.log('? Loaded', this.subjects.length, 'subjects')
 
       } catch (error) {
-        console.error('❌ Error fetching subjects:', error)
+        console.error('? Error fetching subjects:', error)
         alert(`Unable to load subjects: ${error.message}`)
         this.subjects = []
       } finally {
@@ -1020,15 +1020,15 @@ export default {
 
     setupEnrollmentSubscription() {
       if (!this.studentInfo?.id) {
-        console.log('⚠️ No student info for subscription')
+        console.log('?? No student info for subscription')
         return
       }
 
-      console.log('🔔 Setting up real-time subscriptions for student:', this.studentInfo.id)
+      console.log('?? Setting up real-time subscriptions for student:', this.studentInfo.id)
       
       // Get all section IDs for this student
       const sectionIds = this.subjects.map(s => s.sectionId).filter(Boolean)
-      console.log('📡 Monitoring sections:', sectionIds)
+      console.log('?? Monitoring sections:', sectionIds)
       
       // Create a single channel for all real-time updates
       this.enrollmentSubscription = supabase
@@ -1043,15 +1043,15 @@ export default {
             filter: `student_id=eq.${this.studentInfo.id}`
           }, 
           async (payload) => {
-            console.log('📢 Enrollment change detected:', payload)
+            console.log('?? Enrollment change detected:', payload)
             const { eventType, new: newRecord, old: oldRecord } = payload
             
             if (eventType === 'DELETE' || 
                (eventType === 'UPDATE' && newRecord?.status !== 'active')) {
-              console.log('👋 Unenrolled - refreshing...')
+              console.log('?? Unenrolled - refreshing...')
               setTimeout(async () => await this.fetchSubjects(), 500)
             } else if (eventType === 'INSERT' && newRecord?.status === 'active') {
-              console.log('🎉 New enrollment - refreshing...')
+              console.log('?? New enrollment - refreshing...')
               setTimeout(async () => await this.fetchSubjects(), 500)
             }
           }
@@ -1066,10 +1066,10 @@ export default {
           },
           async (payload) => {
             const quiz = payload.new
-            console.log('� New quiz detected:', quiz.title)
+            console.log('? New quiz detected:', quiz.title)
             
             if (sectionIds.includes(quiz.section_id)) {
-              console.log('✨ New quiz in your section! Updating...')
+              console.log('? New quiz in your section! Updating...')
               this.fetchSubjects()
             }
           }
@@ -1089,7 +1089,7 @@ export default {
             if (sectionIds.includes(quiz.section_id) && 
                 quiz.status === 'published' && 
                 oldQuiz.status !== 'published') {
-              console.log('📢 Quiz published:', quiz.title)
+              console.log('?? Quiz published:', quiz.title)
               this.fetchSubjects()
             }
           }
@@ -1106,7 +1106,7 @@ export default {
             const assignment = payload.new
             
             if (sectionIds.includes(assignment.section_id)) {
-              console.log('✨ New assignment published!')
+              console.log('? New assignment published!')
               this.fetchSubjects()
             }
           }
@@ -1126,7 +1126,7 @@ export default {
             if (sectionIds.includes(assignment.section_id) && 
                 assignment.status === 'published' && 
                 oldAssignment.status !== 'published') {
-              console.log('📢 Assignment published:', assignment.title)
+              console.log('?? Assignment published:', assignment.title)
               this.fetchSubjects()
             }
           }
@@ -1134,25 +1134,25 @@ export default {
         
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Live updates active!')
+            console.log('? Live updates active!')
           }
         })
     },
 
     cleanupEnrollmentSubscription() {
       if (this.enrollmentSubscription) {
-        console.log('🧹 Cleaning up enrollment subscription')
+        console.log('?? Cleaning up enrollment subscription')
         supabase.removeChannel(this.enrollmentSubscription)
         this.enrollmentSubscription = null
       }
     },
 
     viewAssessments(subject, type) {
-      console.log('📌 viewAssessments called:', { subject, type })
+      console.log('?? viewAssessments called:', { subject, type })
       
       // Validate subject data before navigating
       if (!subject || !subject.id || !subject.sectionId) {
-        console.error('❌ Invalid subject data:', subject)
+        console.error('? Invalid subject data:', subject)
         alert('Unable to navigate. Please refresh the page and try again.')
         return
       }
@@ -1170,7 +1170,7 @@ export default {
             instructor: subject.instructor
           }
         }).catch(err => {
-          console.error('❌ Navigation error:', err)
+          console.error('? Navigation error:', err)
         })
       } else if (type === 'quiz') {
         this.$router.push({
@@ -1185,7 +1185,7 @@ export default {
             instructor: subject.instructor
           }
         }).catch(err => {
-          console.error('❌ Navigation error:', err)
+          console.error('? Navigation error:', err)
         })
       } else {
         this.$router.push({
@@ -1201,16 +1201,16 @@ export default {
             instructor: subject.instructor
           }
         }).catch(err => {
-          console.error('❌ Navigation error:', err)
+          console.error('? Navigation error:', err)
         })
       }
     },
 
     takeQuiz(subject) {
-      console.log('📌 takeQuiz called:', subject)
+      console.log('?? takeQuiz called:', subject)
       
       if (!subject || !subject.id || !subject.sectionId) {
-        console.error('❌ Invalid subject data:', subject)
+        console.error('? Invalid subject data:', subject)
         alert('Unable to navigate. Please refresh the page and try again.')
         return
       }
@@ -1228,15 +1228,15 @@ export default {
           sectionCode: subject.code
         }
       }).catch(err => {
-        console.error('❌ Navigation error:', err)
+        console.error('? Navigation error:', err)
       })
     },
 
     viewGrades(subject) {
-      console.log('📌 viewGrades called:', subject)
+      console.log('?? viewGrades called:', subject)
       
       if (!subject || !subject.id || !subject.sectionId) {
-        console.error('❌ Invalid subject data:', subject)
+        console.error('? Invalid subject data:', subject)
         alert('Unable to navigate. Please refresh the page and try again.')
         return
       }
@@ -1255,7 +1255,7 @@ export default {
           overallScore: subject.overallScore
         }
       }).catch(err => {
-        console.error('❌ Navigation error:', err)
+        console.error('? Navigation error:', err)
       })
     },
 
@@ -1355,9 +1355,9 @@ export default {
   },
 
   async mounted() {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    console.log('🚀 COMPONENT MOUNTED')
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('??????????????????????????????????')
+    console.log('?? COMPONENT MOUNTED')
+    console.log('??????????????????????????????????')
     
     try {
       // Fetch real-time school year and quarter from database
@@ -1375,7 +1375,7 @@ export default {
       const authSuccess = await this.initializeAuth()
       
       if (!authSuccess) {
-        console.log('❌ Auth failed')
+        console.log('? Auth failed')
         return
       }
 
@@ -1388,15 +1388,15 @@ export default {
       // Setup real-time subscription for school year and quarter changes
       this.setupSchoolYearSubscription()
       
-      console.log('✅ INITIALIZATION COMPLETE')
+      console.log('? INITIALIZATION COMPLETE')
       
     } catch (error) {
-      console.error('❌ MOUNT ERROR:', error)
+      console.error('? MOUNT ERROR:', error)
       await this.$router.push('/login')
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event)
+      console.log('?? Auth state changed:', event)
       if (event === 'SIGNED_IN' && session?.user) {
         const success = await this.initializeAuth()
         if (success) this.fetchSubjects()
@@ -1410,7 +1410,7 @@ export default {
   },
   
   beforeUnmount() {
-    console.log('🔄 COMPONENT UNMOUNTING - Cleaning up')
+    console.log('?? COMPONENT UNMOUNTING - Cleaning up')
     if (this.pollingInterval) clearInterval(this.pollingInterval)
     this.cleanupEnrollmentSubscription()
     this.cleanupSchoolYearSubscription()
@@ -1421,29 +1421,97 @@ export default {
 
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* ==================== MODERN ENHANCED STYLES ==================== */
+/* ==================== PREMIUM ENHANCED STYLES ==================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.subjects-container {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #fef3c7 100%);
+  padding: 1.5rem 2rem;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.subjects-container::-webkit-scrollbar {
+  width: 12px;
+}
+
+.subjects-container::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.5);
+  border-radius: 10px;
+}
+
+.subjects-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.subjects-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #2d6a5a, #1e4d3f);
+}
 
 /* Page Header Styles */
 .page-header {
   margin-bottom: 2rem;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
-  transition: all 0.3s ease;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3D8D7A, #2d6a5a, #3D8D7A);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .header-content:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
 
 .header-main {
@@ -1455,13 +1523,25 @@ export default {
 .header-icon {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #3d8d7a 0%, #20c997 100%);
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 16px rgba(61, 141, 122, 0.3);
+  box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 20px rgba(61, 141, 122, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 12px 30px rgba(61, 141, 122, 0.4);
+  }
 }
 
 .header-text {
@@ -1469,18 +1549,23 @@ export default {
 }
 
 .page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.02em;
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 0.35rem 0;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
 }
 
 .page-subtitle {
-  font-size: 1.1rem;
-  color: #6b7280;
+  font-size: 0.85rem;
+  color: #64748b;
   margin: 0;
-  font-weight: 400;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .academic-info {
@@ -1495,33 +1580,45 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #374151;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  background: rgba(241, 245, 249, 0.8);
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.academic-year:hover {
+  background: rgba(226, 232, 240, 0.9);
+  border-color: rgba(61, 141, 122, 0.3);
 }
 
 .academic-year svg {
   width: 16px;
   height: 16px;
-  color: #3d8d7a;
+  color: #3D8D7A;
 }
 
 .quarter-badge {
   display: inline-flex;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #fff;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #3d8d7a 0%, #2d6d5f 100%);
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(61, 141, 122, 0.2);
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.25);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quarter-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(61, 141, 122, 0.35);
 }
 
 .header-stats {
@@ -1533,52 +1630,75 @@ export default {
 .stat-card {
   text-align: center;
   padding: 1rem 1.5rem;
-  background: #f9fafb;
+  background: rgba(248, 250, 252, 0.8);
   border-radius: 12px;
   min-width: 120px;
+  border: 2px solid rgba(226, 232, 240, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(61, 141, 122, 0.3);
+  transform: translateY(-2px);
 }
 
 .stat-number {
   display: block;
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 800;
-  color: #3d8d7a;
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
 }
 
 .stat-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 0.5rem;
+  line-height: 1;
 }
 
 .enrollment-badge {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(14, 165, 233, 0.1));
   color: #0369a1;
   padding: 1rem 1.5rem;
   border-radius: 12px;
   font-weight: 600;
-  border: 2px solid #7dd3fc;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
+  border: 2px solid rgba(6, 182, 212, 0.3);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.85rem;
+}
+
+.enrollment-badge:hover {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(14, 165, 233, 0.15));
+  border-color: #06b6d4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(6, 182, 212, 0.25);
 }
 
 /* Controls Card Styles */
 .controls-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.6);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
 }
 
 .search-section {
@@ -1589,51 +1709,58 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  background: rgba(248, 250, 252, 0.8);
+  border: 2px solid rgba(226, 232, 240, 0.8);
   border-radius: 12px;
   padding: 0.75rem 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-wrapper:focus-within {
-  border-color: #3d8d7a;
+  border-color: #3D8D7A;
   background: white;
   box-shadow: 0 0 0 4px rgba(61, 141, 122, 0.1);
 }
 
 .search-icon {
-  color: #6b7280;
+  color: #64748b;
   margin-right: 0.75rem;
   flex-shrink: 0;
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-wrapper:focus-within .search-icon {
+  color: #3D8D7A;
 }
 
 .search-input {
   flex: 1;
   border: none;
   background: transparent;
-  font-size: 1rem;
-  color: #374151;
+  font-size: 0.9rem;
+  color: #1e293b;
   outline: none;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
 }
 
 .search-input::placeholder {
-  color: #9ca3af;
+  color: #94a3b8;
+  font-weight: 400;
 }
 
 .clear-search {
   background: none;
   border: none;
-  color: #6b7280;
+  color: #64748b;
   cursor: pointer;
   padding: 0.25rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .clear-search:hover {
-  color: #374151;
+  color: #1e293b;
   background: rgba(0, 0, 0, 0.05);
 }
 
@@ -1653,32 +1780,52 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #f3f4f6;
-  border: 2px solid #e5e7eb;
+  background: rgba(241, 245, 249, 0.8);
+  border: 2px solid rgba(226, 232, 240, 0.8);
   border-radius: 24px;
   padding: 0.5rem 1rem;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: #475569;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.8rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-pill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.filter-pill:hover::before {
+  left: 100%;
 }
 
 .filter-pill:hover {
-  border-color: #d1d5db;
-  background: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.8);
+  background: rgba(226, 232, 240, 0.9);
+  transform: translateY(-2px);
 }
 
 .filter-pill.active {
-  background: linear-gradient(135deg, #3d8d7a 0%, #20c997 100%);
-  border-color: #3d8d7a;
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  border-color: #3D8D7A;
   color: white;
-  box-shadow: 0 2px 8px rgba(61, 141, 122, 0.3);
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.3);
+  transform: translateY(-2px);
 }
 
 .filter-label {
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .filter-count {
@@ -1686,15 +1833,16 @@ export default {
   color: currentColor;
   border-radius: 12px;
   padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   min-width: 1.25rem;
   text-align: center;
   line-height: 1.2;
 }
 
 .filter-pill.active .filter-count {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
+  font-weight: 800;
 }
 
 /* Content Area Styles */
@@ -1708,21 +1856,24 @@ export default {
   grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
   gap: 1.5rem;
   align-items: start;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 /* Enhanced Subject Cards */
 .subject-card {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(226, 232, 240, 0.8);
   border-radius: 20px;
   padding: 1.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: visible;
   display: flex;
   flex-direction: column;
   min-height: 420px;
   height: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .subject-card::before {
@@ -1732,29 +1883,39 @@ export default {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(135deg, #3d8d7a 0%, #20c997 100%);
+  background: linear-gradient(90deg, #3D8D7A, #2d6a5a, #3D8D7A);
+  background-size: 200% 100%;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px 20px 0 0;
+}
+
+@keyframes cardShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .subject-card:hover {
-  border-color: #3d8d7a;
-  box-shadow: 0 8px 32px rgba(61, 141, 122, 0.15);
-  transform: translateY(-2px);
+  border-color: rgba(61, 141, 122, 0.4);
+  box-shadow: 0 12px 32px rgba(61, 141, 122, 0.15);
+  transform: translateY(-4px);
 }
 
 .subject-card:hover::before {
   opacity: 1;
+  animation: cardShimmer 3s linear infinite;
 }
 
 .subject-card.favorite-card {
-  border-color: #f59e0b;
-  background: linear-gradient(135deg, #fef3c7 0%, #fff 100%);
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.5), rgba(255, 255, 255, 0.95));
 }
 
 .subject-card.favorite-card::before {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(90deg, #f59e0b, #d97706, #f59e0b);
+  background-size: 200% 100%;
   opacity: 1;
+  animation: cardShimmer 3s linear infinite;
 }
 
 .card-header {
@@ -1781,11 +1942,17 @@ export default {
   justify-content: center;
   color: white;
   font-weight: 800;
-  font-size: 1.125rem;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
-  font-family: 'Inter', sans-serif;
-  letter-spacing: 0.02em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.subject-card:hover .subject-avatar {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .subject-details {
@@ -1796,12 +1963,15 @@ export default {
 }
 
 .subject-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 1.05rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
   line-height: 1.3;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.3px;
 }
 
 .subject-meta {
@@ -1809,41 +1979,41 @@ export default {
   align-items: center;
   gap: 0.5rem;
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   line-height: 1.2;
 }
 
 .subject-code {
   font-weight: 700;
-  color: #3d8d7a;
+  color: #3D8D7A;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   background: rgba(61, 141, 122, 0.1);
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
 }
 
 .separator {
-  color: #9ca3af;
+  color: #94a3b8;
   font-weight: 400;
 }
 
 .subject-section {
-  color: #6b7280;
-  font-weight: 500;
-  background: #f3f4f6;
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  background: rgba(241, 245, 249, 0.8);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
 }
 
 .subject-instructor {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  color: #6b7280;
-  font-size: 0.8125rem;
+  color: #64748b;
+  font-size: 0.75rem;
   margin: 0;
   font-weight: 500;
   line-height: 1.2;
@@ -1859,32 +2029,52 @@ export default {
 .action-icon-btn {
   width: 40px;
   height: 40px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid rgba(226, 232, 240, 0.8);
   border-radius: 10px;
-  background: white;
+  background: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: #6b7280;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #64748b;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-icon-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.action-icon-btn:hover::before {
+  left: 100%;
 }
 
 .action-icon-btn:hover {
-  border-color: #d1d5db;
-  background: #f9fafb;
-  color: #374151;
+  border-color: rgba(148, 163, 184, 0.8);
+  background: rgba(248, 250, 252, 0.95);
+  color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .favorite-btn.active {
-  border-color: #f59e0b;
-  background: #fef3c7;
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(254, 243, 199, 0.8);
   color: #d97706;
 }
 
 .favorite-btn.active:hover {
-  background: #fed7aa;
+  background: rgba(254, 215, 170, 0.9);
   border-color: #d97706;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
 }
 
 /* Progress Section */
@@ -1901,34 +2091,39 @@ export default {
 }
 
 .progress-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #374151;
-  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
 .progress-percentage {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #3d8d7a;
-  background: rgba(61, 141, 122, 0.1);
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   padding: 0.125rem 0.5rem;
   border-radius: 12px;
 }
 
 .progress-bar {
-  height: 6px;
-  background: #f3f4f6;
-  border-radius: 3px;
+  height: 8px;
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(135deg, #3d8d7a 0%, #20c997 100%);
-  border-radius: 3px;
-  transition: width 0.8s ease;
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(61, 141, 122, 0.3);
 }
 
 /* Stats Grid */
@@ -1941,7 +2136,7 @@ export default {
 }
 
 .stats-grid .stat-card {
-  background: #f9fafb;
+  background: rgba(248, 250, 252, 0.8);
   padding: 0.75rem 0.5rem;
   border-radius: 10px;
   text-align: center;
@@ -1951,21 +2146,32 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 65px;
-  border: 1px solid #f1f5f9;
+  border: 2px solid rgba(226, 232, 240, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stats-grid .stat-card:hover {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(61, 141, 122, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .stats-grid .stat-number {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  color: #3d8d7a;
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
   margin-bottom: 0.25rem;
 }
 
 .stats-grid .stat-label {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: #6b7280;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   line-height: 1;
@@ -1985,81 +2191,110 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #3d8d7a 0%, #20c997 100%);
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   color: white;
   border: none;
   padding: 0.875rem 1.5rem;
   border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.875rem;
+  font-weight: 700;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(61, 141, 122, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.25);
   width: 100%;
   min-height: 44px;
-  font-family: 'Inter', sans-serif;
-  letter-spacing: 0.02em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.3px;
+}
+
+.primary-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.primary-btn:hover::before {
+  left: 100%;
 }
 
 .primary-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(61, 141, 122, 0.3);
+  background: linear-gradient(135deg, #2d6a5a, #1e4d3f);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(61, 141, 122, 0.35);
+}
+
+.primary-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(61, 141, 122, 0.2);
 }
 
 .secondary-actions {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  gap: 0.75rem;
 }
 
 .secondary-btn {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
-  color: #374151;
-  padding: 0.5rem 0.625rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  flex: 1;
   justify-content: center;
-  min-width: 0;
-  white-space: nowrap;
-  font-family: 'Inter', sans-serif;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
+  gap: 0.375rem;
+  background: rgba(248, 250, 252, 0.8);
+  color: #475569;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  min-height: 40px;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.2px;
+}
+
+.secondary-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.secondary-btn:hover::before {
+  left: 100%;
 }
 
 .secondary-btn:hover {
-  border-color: #d1d5db;
-  background: #f3f4f6;
-}
-
-.secondary-btn.quiz-btn {
-  border-color: #dbeafe;
-  background: #eff6ff;
-  color: #1e40af;
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(148, 163, 184, 0.8);
+  color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .secondary-btn.quiz-btn:hover {
-  border-color: #3b82f6;
-  background: #dbeafe;
-}
-
-.secondary-btn.assignment-btn {
-  border-color: #fce7f3;
-  background: #fdf2f8;
-  color: #be185d;
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(237, 233, 254, 0.8);
+  color: #7c3aed;
 }
 
 .secondary-btn.assignment-btn:hover {
-  border-color: #ec4899;
-  background: #fce7f3;
+  border-color: rgba(6, 182, 212, 0.4);
+  background: rgba(224, 242, 254, 0.8);
+  color: #0891b2;
 }
 
 /* Enhanced Empty State */
@@ -2069,17 +2304,33 @@ export default {
   align-items: center;
   min-height: 500px;
   padding: 2rem;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .empty-state-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 20px;
   padding: 3rem 2rem;
   text-align: center;
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 2px solid #e5e7eb;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.empty-state-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3D8D7A, #2d6a5a, #3D8D7A);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
 }
 
 .empty-illustration {
@@ -2176,17 +2427,23 @@ export default {
 }
 
 .empty-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 1.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 1rem 0;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
 }
 
 .empty-description {
-  font-size: 1.1rem;
-  color: #6b7280;
+  font-size: 0.95rem;
+  color: #64748b;
   line-height: 1.6;
   margin: 0 0 2rem 0;
+  font-weight: 500;
 }
 
 .search-suggestions {
@@ -2197,20 +2454,40 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: #f3f4f6;
-  border: 2px solid #e5e7eb;
-  color: #374151;
+  background: rgba(241, 245, 249, 0.8);
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  color: #475569;
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.suggestion-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.suggestion-btn:hover::before {
+  left: 100%;
 }
 
 .suggestion-btn:hover {
-  border-color: #3d8d7a;
-  background: #f0fdf4;
-  color: #3d8d7a;
+  border-color: rgba(61, 141, 122, 0.4);
+  background: rgba(240, 253, 244, 0.8);
+  color: #3D8D7A;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.15);
 }
 
 .info-cards {
@@ -2224,46 +2501,69 @@ export default {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  background: #f9fafb;
+  background: rgba(248, 250, 252, 0.8);
   padding: 1.5rem;
   border-radius: 12px;
   text-align: left;
+  border: 2px solid rgba(226, 232, 240, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.info-card:hover {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(61, 141, 122, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .info-icon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #3d8d7a 0%, #20c997 100%);
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.25);
 }
 
 .info-content h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 0.95rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 0.5rem 0;
+  letter-spacing: -0.2px;
 }
 
 .info-content p {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: 0.8rem;
+  color: #64748b;
   margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .help-tip {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  background: #e0f2fe;
-  border: 1px solid #7dd3fc;
+  background: linear-gradient(135deg, rgba(224, 242, 254, 0.5), rgba(186, 230, 253, 0.5));
+  border: 2px solid rgba(6, 182, 212, 0.3);
   padding: 1rem;
   border-radius: 12px;
   margin-top: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.help-tip:hover {
+  background: linear-gradient(135deg, rgba(224, 242, 254, 0.7), rgba(186, 230, 253, 0.7));
+  border-color: #06b6d4;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
 }
 
 .help-tip svg {
@@ -2332,7 +2632,7 @@ export default {
   color: #374151;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
   text-align: left;
@@ -3179,7 +3479,7 @@ export default {
   padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: #fbffe4;
   min-height: 100vh;
 }
@@ -3278,7 +3578,7 @@ export default {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   box-shadow: 0 2px 6px rgba(14, 165, 233, 0.1);
   white-space: nowrap;
 }
@@ -3337,7 +3637,7 @@ export default {
   font-size: 0.95rem;
   color: #181c20;
   width: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .search-input::placeholder {
@@ -3358,7 +3658,7 @@ export default {
   transition: all 0.2s ease;
   font-weight: 500;
   color: #181c20;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -3553,7 +3853,7 @@ export default {
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
   text-align: left;
@@ -3726,7 +4026,7 @@ export default {
   font-weight: 600;
   font-size: 0.875rem;
   border: none;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   pointer-events: auto !important; /* Ensure button is clickable */
   z-index: 1; /* Make sure it's above other elements */
 }
@@ -4127,7 +4427,7 @@ export default {
   border-radius: 8px;
   font-size: 0.95rem;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: white;
 }
 
@@ -4226,7 +4526,7 @@ export default {
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .cancel-btn:hover {
@@ -4243,7 +4543,7 @@ export default {
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .join-btn:hover {
@@ -4265,13 +4565,13 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(251, 255, 228, 0.95);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
@@ -4284,13 +4584,28 @@ export default {
 }
 
 .loading-content {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   padding: 3rem 4rem;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(61, 141, 122, 0.15);
-  border: 2px solid #a3d1c6;
-  animation: slideUp 0.4s ease;
+  box-shadow: 0 12px 40px rgba(61, 141, 122, 0.15);
+  border: 2px solid rgba(61, 141, 122, 0.2);
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3D8D7A, #2d6a5a, #3D8D7A);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
 }
 
 @keyframes slideUp {
@@ -4315,12 +4630,12 @@ export default {
   width: 80px;
   height: 80px;
   border: 5px solid rgba(61, 141, 122, 0.1);
-  border-left: 5px solid #3d8d7a;
-  border-top: 5px solid #20c997;
+  border-left: 5px solid #3D8D7A;
+  border-top: 5px solid #2d6a5a;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto;
-  box-shadow: 0 0 20px rgba(61, 141, 122, 0.1);
+  box-shadow: 0 0 25px rgba(61, 141, 122, 0.2);
 }
 
 @keyframes spin {
@@ -4333,19 +4648,23 @@ export default {
 }
 
 .loading-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #181c20;
+  font-size: 1.15rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 0.5rem 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.3px;
 }
 
 .loading-subtext {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #3d8d7a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 /* ==================== END NEW LOADING STYLES ==================== */
@@ -4922,7 +5241,7 @@ export default {
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .unenroll-btn:hover {
