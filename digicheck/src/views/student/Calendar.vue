@@ -32,6 +32,16 @@
           <div>
             <div class="section-header-title minimal-header-title">Academic Calendar</div>
             <div class="section-header-sub minimal-header-sub">View and manage your academic events</div>
+            <div class="academic-info-calendar">
+              <span class="academic-year-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                S.Y. {{ currentSchoolYear }}
+              </span>
+              <span class="quarter-badge-calendar">{{ currentQuarter }}</span>
+            </div>
           </div>
         </div>
         <div class="section-header-stats align-top">
@@ -67,6 +77,99 @@
       <div class="legend-item">
         <div class="legend-color overdue"></div>
         <span>Overdue</span>
+      </div>
+    </div>
+
+    <!-- Academic Schedule Timeline -->
+    <div class="academic-schedule-section">
+      <div class="schedule-header">
+        <h3 class="schedule-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+            <path d="M7 10h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/>
+          </svg>
+          {{ activeSchoolYear?.year_name || 'Loading...' }} Academic Schedule
+        </h3>
+        <p class="schedule-subtitle">
+          {{ activeSchoolYear?.start_date ? formatDate(activeSchoolYear.start_date) : '' }} - 
+          {{ activeSchoolYear?.end_date ? formatDate(activeSchoolYear.end_date) : '' }}
+        </p>
+      </div>
+
+      <div v-if="gradingPeriods.length > 0" class="quarters-timeline">
+        <div 
+          v-for="(period, index) in gradingPeriods" 
+          :key="period.id"
+          :class="['quarter-card', 
+                   { 'active-quarter': period.is_active },
+                   { 'completed-quarter': period.status === 'completed' },
+                   { 'upcoming-quarter': period.status === 'upcoming' }]"
+        >
+          <div class="quarter-header">
+            <div class="quarter-badge-large" :class="period.status">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path v-if="period.status === 'completed'" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                <path v-else-if="period.is_active" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                <path v-else d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              <span class="quarter-number">Q{{ period.period_number }}</span>
+            </div>
+            <div class="quarter-info">
+              <h4 class="quarter-name">{{ period.period_name }}</h4>
+              <div class="quarter-dates">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/>
+                </svg>
+                <span>{{ formatDate(period.start_date) }} - {{ formatDate(period.end_date) }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="quarter-status">
+            <div v-if="period.is_active" class="status-indicator active">
+              <span class="status-dot"></span>
+              <span>Active Now</span>
+            </div>
+            <div v-else-if="period.status === 'completed'" class="status-indicator completed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+              <span>Completed</span>
+            </div>
+            <div v-else class="status-indicator upcoming">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              <span>Upcoming</span>
+            </div>
+          </div>
+
+          <div class="quarter-duration">
+            <span class="duration-label">Duration:</span>
+            <span class="duration-value">{{ calculateDuration(period.start_date, period.end_date) }} days</span>
+          </div>
+
+          <!-- Progress bar for active quarter -->
+          <div v-if="period.is_active" class="quarter-progress">
+            <div class="progress-info">
+              <span class="progress-label">Progress</span>
+              <span class="progress-percentage">{{ calculateQuarterProgress(period) }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: calculateQuarterProgress(period) + '%' }"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="no-schedule">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <p>No academic schedule available</p>
       </div>
     </div>
 
@@ -355,7 +458,14 @@ export default {
       events: [],
       user: null,
       studentId: null,
-      fastUpdateInterval: null
+      fastUpdateInterval: null,
+      // School Year and Quarter Management
+      currentSchoolYear: '',
+      currentQuarter: '',
+      activeSchoolYear: null,
+      gradingPeriods: [],
+      schoolYearSubscription: null,
+      gradingPeriodSubscription: null
     };
   },
   computed: {
@@ -468,6 +578,9 @@ export default {
         this.studentId = studentData.id;
         console.log('Student ID:', this.studentId);
         console.log('Student grade level:', studentData.grade_level);
+        
+        // Fetch school year and quarter information
+        await this.fetchSchoolYearAndQuarter();
         
         // Load initial events
         await this.loadEvents();
@@ -1137,6 +1250,152 @@ export default {
       });
     },
 
+    async fetchSchoolYearAndQuarter() {
+      try {
+        console.log('📅 Fetching active school year and quarter from database...');
+        
+        // Fetch active school year
+        const { data: activeSchoolYear, error: schoolYearError } = await supabase
+          .from('school_years')
+          .select('*')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (schoolYearError) {
+          console.error('❌ Error fetching school year:', schoolYearError);
+          this.currentSchoolYear = 'N/A';
+          this.activeSchoolYear = null;
+        } else if (activeSchoolYear) {
+          this.currentSchoolYear = activeSchoolYear.year_name;
+          this.activeSchoolYear = activeSchoolYear;
+          console.log('✅ Active School Year:', this.currentSchoolYear);
+
+          // Fetch active grading period for this school year
+          const { data: activeGradingPeriod, error: gradingPeriodError } = await supabase
+            .from('grading_periods')
+            .select('*')
+            .eq('school_year_id', activeSchoolYear.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (gradingPeriodError) {
+            console.error('❌ Error fetching grading period:', gradingPeriodError);
+            this.currentQuarter = 'N/A';
+          } else if (activeGradingPeriod) {
+            this.currentQuarter = activeGradingPeriod.period_name;
+            console.log('✅ Active Quarter:', this.currentQuarter);
+          } else {
+            console.warn('⚠️ No active grading period found');
+            this.currentQuarter = 'No Active Quarter';
+          }
+
+          // Fetch all grading periods for this school year (for timeline display)
+          const { data: allPeriods, error: periodsError } = await supabase
+            .from('grading_periods')
+            .select('*')
+            .eq('school_year_id', activeSchoolYear.id)
+            .order('period_number', { ascending: true });
+
+          if (!periodsError && allPeriods) {
+            this.gradingPeriods = allPeriods;
+            console.log('✅ Grading periods loaded:', this.gradingPeriods.length);
+          }
+        } else {
+          console.warn('⚠️ No active school year found');
+          this.currentSchoolYear = 'No Active Year';
+          this.currentQuarter = 'N/A';
+          this.activeSchoolYear = null;
+        }
+
+        console.log(`📅 School Year: ${this.currentSchoolYear}, Quarter: ${this.currentQuarter}`);
+      } catch (error) {
+        console.error('❌ Error in fetchSchoolYearAndQuarter:', error);
+        this.currentSchoolYear = 'Error';
+        this.currentQuarter = 'Error';
+      }
+    },
+
+    setupSchoolYearSubscription() {
+      try {
+        console.log('🔔 Setting up real-time subscription for school year updates...');
+
+        // Subscribe to school_years table changes
+        this.schoolYearSubscription = supabase
+          .channel('school_years_changes_calendar')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'school_years'
+            },
+            (payload) => {
+              console.log('🔔 School year changed:', payload);
+              this.fetchSchoolYearAndQuarter();
+            }
+          )
+          .subscribe();
+
+        // Subscribe to grading_periods table changes
+        this.gradingPeriodSubscription = supabase
+          .channel('grading_periods_changes_calendar')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'grading_periods'
+            },
+            (payload) => {
+              console.log('🔔 Grading period changed:', payload);
+              this.fetchSchoolYearAndQuarter();
+            }
+          )
+          .subscribe();
+
+        console.log('✅ Real-time subscriptions established');
+      } catch (error) {
+        console.error('❌ Error setting up school year subscription:', error);
+      }
+    },
+
+    cleanupSchoolYearSubscription() {
+      console.log('🔄 Cleaning up school year subscriptions...');
+      
+      if (this.schoolYearSubscription) {
+        supabase.removeChannel(this.schoolYearSubscription);
+        this.schoolYearSubscription = null;
+      }
+      
+      if (this.gradingPeriodSubscription) {
+        supabase.removeChannel(this.gradingPeriodSubscription);
+        this.gradingPeriodSubscription = null;
+      }
+    },
+
+    calculateDuration(startDate, endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    },
+
+    calculateQuarterProgress(period) {
+      const now = new Date();
+      const start = new Date(period.start_date);
+      const end = new Date(period.end_date);
+      
+      if (now < start) return 0;
+      if (now > end) return 100;
+      
+      const totalDuration = end - start;
+      const elapsed = now - start;
+      const progress = (elapsed / totalDuration) * 100;
+      
+      return Math.min(100, Math.max(0, Math.round(progress)));
+    },
+
     cleanup() {
       if (this.statusUpdateInterval) {
         clearInterval(this.statusUpdateInterval);
@@ -1147,10 +1406,14 @@ export default {
       if (this.realTimeSubscription) {
         this.realTimeSubscription.unsubscribe();
       }
+      this.cleanupSchoolYearSubscription();
     }
   },
   mounted() {
     this.initializeData();
+    
+    // Setup school year real-time subscription
+    this.setupSchoolYearSubscription();
     
     this.statusUpdateInterval = setInterval(() => {
       this.updateCurrentTime();
@@ -1168,8 +1431,31 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* CSS Variables for Typography - Premium Design System */
+:root {
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;      /* 12px - Small labels, metadata */
+  --font-size-sm: 0.875rem;     /* 14px - Body text, descriptions */
+  --font-size-base: 1rem;       /* 16px - Base body text */
+  --font-size-lg: 1.125rem;     /* 18px - Section headings */
+  --font-size-xl: 1.25rem;      /* 20px - Card titles */
+  --font-size-2xl: 1.5rem;      /* 24px - Page headings */
+  --font-size-3xl: 2rem;        /* 32px - Main titles */
+  
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+}
 
 /* All other CSS follows here */
 .section-header-card {
@@ -1178,6 +1464,7 @@ export default {
 .dark .section-header-card {
   border: 2px solid #20c997;
 }
+
 * {
   margin: 0;
   padding: 0;
@@ -1189,6 +1476,8 @@ export default {
   background: #FBFFE4;
   padding: 1.5rem;
   font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
 }
 .dark .calendar-container {
   background: #181c20;
@@ -1239,21 +1528,23 @@ export default {
 }
 
 .section-header-title {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
   color: #181c20;
   margin-bottom: 0.25rem;
   letter-spacing: -0.01em;
+  line-height: var(--line-height-tight);
 }
 .dark .section-header-title {
   color: #A3D1C6;
 }
 
 .section-header-sub {
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
   color: #3D8D7A;
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
   margin-bottom: 0;
+  line-height: var(--line-height-normal);
 }
 .dark .section-header-sub {
   color: #A3D1C6;
@@ -2966,25 +3257,490 @@ export default {
 }
 
 .loading-text {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
   color: #181c20;
   margin: 0 0 0.5rem 0;
-  font-family: 'Inter', sans-serif;
+  line-height: var(--line-height-tight);
 }
 .dark .loading-text {
   color: #A3D1C6;
 }
 
 .loading-subtext {
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   color: #3d8d7a;
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  line-height: var(--line-height-normal);
 }
 .dark .loading-subtext {
   color: #A3D1C6;
+}
+
+/* Academic Info Calendar Styles */
+.academic-info-calendar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(77, 187, 152, 0.08);
+  border: 2px solid rgba(77, 187, 152, 0.2);
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  backdrop-filter: blur(10px);
+}
+
+.dark .academic-info-calendar {
+  background: rgba(32, 201, 151, 0.1);
+  border-color: rgba(32, 201, 151, 0.25);
+}
+
+.academic-year-badge,
+.quarter-badge-calendar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  border-radius: 8px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  transition: all 0.3s ease;
+  line-height: var(--line-height-tight);
+}
+
+.academic-year-badge {
+  background: rgba(77, 187, 152, 0.15);
+  color: #2d6a57;
+  border: 1.5px solid rgba(77, 187, 152, 0.3);
+}
+
+.dark .academic-year-badge {
+  background: rgba(32, 201, 151, 0.15);
+  color: #20c997;
+  border-color: rgba(32, 201, 151, 0.4);
+}
+
+.quarter-badge-calendar {
+  background: linear-gradient(135deg, #4dbb98 0%, #3d8d7a 100%);
+  color: white;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(77, 187, 152, 0.2);
+}
+
+.dark .quarter-badge-calendar {
+  background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.academic-year-badge:hover,
+.quarter-badge-calendar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(77, 187, 152, 0.25);
+}
+
+/* Academic Schedule Section */
+.academic-schedule-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 12px rgba(61, 141, 122, 0.08);
+  border: 2px solid #e8f5f1;
+}
+
+.dark .academic-schedule-section {
+  background: #23272b;
+  border-color: #3d8d7a;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.schedule-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e8f5f1;
+}
+
+.dark .schedule-header {
+  border-bottom-color: #3d8d7a;
+}
+
+.schedule-header-icon {
+  font-size: 1.75rem;
+  color: #4dbb98;
+}
+
+.dark .schedule-header-icon {
+  color: #20c997;
+}
+
+.schedule-header-text h3 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: #2d6a57;
+  margin: 0 0 0.25rem 0;
+  line-height: var(--line-height-tight);
+}
+
+.dark .schedule-header-text h3 {
+  color: #20c997;
+}
+
+.schedule-header-text p {
+  font-size: var(--font-size-sm);
+  color: #5e8c7a;
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+}
+
+.dark .schedule-header-text p {
+  color: #a3d1c6;
+}
+
+/* Quarters Timeline */
+.quarters-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.quarter-card {
+  background: linear-gradient(135deg, #f8fdfc 0%, #e8f5f1 100%);
+  border: 2px solid #d0e9e1;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .quarter-card {
+  background: linear-gradient(135deg, #2a3038 0%, #23272b 100%);
+  border-color: #3d8d7a;
+}
+
+.quarter-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #a3d1c6 0%, #7ab3a0 100%);
+  opacity: 0.5;
+}
+
+.quarter-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(61, 141, 122, 0.15);
+  border-color: #4dbb98;
+}
+
+.dark .quarter-card:hover {
+  border-color: #20c997;
+  box-shadow: 0 8px 20px rgba(32, 201, 151, 0.2);
+}
+
+/* Active Quarter */
+.quarter-card.active-quarter {
+  background: linear-gradient(135deg, #4dbb98 0%, #3d8d7a 100%);
+  border-color: #2d6a57;
+  color: white;
+  box-shadow: 0 4px 16px rgba(77, 187, 152, 0.3);
+}
+
+.dark .quarter-card.active-quarter {
+  background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+  border-color: #20c997;
+  box-shadow: 0 4px 16px rgba(32, 201, 151, 0.4);
+}
+
+.quarter-card.active-quarter::before {
+  background: linear-gradient(90deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 100%);
+}
+
+.quarter-card.active-quarter .quarter-header h4,
+.quarter-card.active-quarter .quarter-dates p,
+.quarter-card.active-quarter .quarter-duration {
+  color: white !important;
+}
+
+/* Completed Quarter */
+.quarter-card.completed-quarter {
+  opacity: 0.75;
+  background: linear-gradient(135deg, #e8f5f1 0%, #d0e9e1 100%);
+}
+
+.dark .quarter-card.completed-quarter {
+  background: linear-gradient(135deg, #1a1e22 0%, #23272b 100%);
+  opacity: 0.7;
+}
+
+.quarter-card.completed-quarter::before {
+  background: linear-gradient(90deg, #7ab3a0 0%, #5e8c7a 100%);
+}
+
+/* Upcoming Quarter */
+.quarter-card.upcoming-quarter {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.dark .quarter-card.upcoming-quarter {
+  opacity: 0.75;
+}
+
+/* Quarter Header */
+.quarter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.quarter-header h4 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #2d6a57;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: var(--line-height-tight);
+}
+
+.dark .quarter-header h4 {
+  color: #20c997;
+}
+
+/* Quarter Status */
+.quarter-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: var(--line-height-tight);
+}
+
+.quarter-status.status-active {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.quarter-status.status-completed {
+  background: rgba(77, 187, 152, 0.15);
+  color: #2d6a57;
+  border: 1px solid rgba(77, 187, 152, 0.3);
+}
+
+.dark .quarter-status.status-completed {
+  background: rgba(32, 201, 151, 0.15);
+  color: #20c997;
+  border-color: rgba(32, 201, 151, 0.3);
+}
+
+.quarter-status.status-upcoming {
+  background: rgba(163, 209, 198, 0.15);
+  color: #5e8c7a;
+  border: 1px solid rgba(163, 209, 198, 0.3);
+}
+
+.dark .quarter-status.status-upcoming {
+  background: rgba(163, 209, 198, 0.1);
+  color: #a3d1c6;
+  border-color: rgba(163, 209, 198, 0.2);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Quarter Dates */
+.quarter-dates {
+  margin-bottom: 0.75rem;
+}
+
+.quarter-dates p {
+  font-size: var(--font-size-sm);
+  color: #5e8c7a;
+  margin: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: var(--line-height-normal);
+}
+
+.dark .quarter-dates p {
+  color: #a3d1c6;
+}
+
+.quarter-dates strong {
+  font-weight: var(--font-weight-semibold);
+  color: #2d6a57;
+}
+
+.dark .quarter-dates strong {
+  color: #20c997;
+}
+
+/* Quarter Duration */
+.quarter-duration {
+  font-size: var(--font-size-sm);
+  color: #7a9c8f;
+  font-weight: var(--font-weight-medium);
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(163, 209, 198, 0.2);
+  line-height: var(--line-height-normal);
+}
+
+.dark .quarter-duration {
+  color: #a3d1c6;
+  border-top-color: rgba(163, 209, 198, 0.1);
+}
+
+/* Quarter Progress */
+.quarter-progress {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.95);
+  line-height: var(--line-height-tight);
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .quarters-timeline {
+    gap: 0.875rem;
+  }
+  
+  .quarter-card {
+    padding: 1.25rem;
+  }
+  
+  .quarter-header h4 {
+    font-size: var(--font-size-lg);
+  }
+}
+
+@media (max-width: 1200px) {
+  .quarters-timeline {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .academic-info-calendar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.625rem;
+    padding: 0.75rem;
+  }
+
+  .academic-year-badge,
+  .quarter-badge-calendar {
+    justify-content: center;
+    padding: 0.625rem 1rem;
+  }
+
+  .quarters-timeline {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .quarter-card {
+    padding: 1.25rem;
+  }
+
+  .quarter-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.625rem;
+  }
+
+  .academic-schedule-section {
+    padding: 1.25rem;
+  }
+  
+  .schedule-header-text h3 {
+    font-size: var(--font-size-xl);
+  }
 }
 </style>
 

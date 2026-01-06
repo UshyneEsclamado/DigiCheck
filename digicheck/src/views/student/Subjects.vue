@@ -404,6 +404,8 @@ export default {
       favoriteSubjects: new Set(),
       archivedSubjects: new Set(),
       enrollmentSubscription: null,
+      schoolYearSubscription: null,
+      gradingPeriodSubscription: null,
       currentSchoolYear: '',
       currentQuarter: '',
     };
@@ -562,51 +564,125 @@ export default {
     },
 
     calculateSchoolYear() {
-      // Philippine school calendar typically starts in June
-      // Current date is January 5, 2026
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1; // JavaScript months are 0-indexed
-      const currentDay = now.getDate();
+      // DEPRECATED: This method is now replaced by fetchSchoolYearAndQuarter()
+      // which fetches real-time data from the database
+      console.log('⚠️ calculateSchoolYear() is deprecated - use fetchSchoolYearAndQuarter()');
+    },
+
+    async fetchSchoolYearAndQuarter() {
+      try {
+        console.log('📅 Fetching active school year and quarter from database...');
+        
+        // Fetch active school year
+        const { data: activeSchoolYear, error: schoolYearError } = await supabase
+          .from('school_years')
+          .select('*')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (schoolYearError) {
+          console.error('❌ Error fetching school year:', schoolYearError);
+          this.currentSchoolYear = 'N/A';
+        } else if (activeSchoolYear) {
+          this.currentSchoolYear = activeSchoolYear.year_name;
+          console.log('✅ Active School Year:', this.currentSchoolYear);
+
+          // Fetch active grading period for this school year
+          const { data: activeGradingPeriod, error: gradingPeriodError } = await supabase
+            .from('grading_periods')
+            .select('*')
+            .eq('school_year_id', activeSchoolYear.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (gradingPeriodError) {
+            console.error('❌ Error fetching grading period:', gradingPeriodError);
+            this.currentQuarter = 'N/A';
+          } else if (activeGradingPeriod) {
+            this.currentQuarter = activeGradingPeriod.period_name;
+            console.log('✅ Active Quarter:', this.currentQuarter);
+          } else {
+            console.warn('⚠️ No active grading period found');
+            this.currentQuarter = 'No Active Quarter';
+          }
+        } else {
+          console.warn('⚠️ No active school year found');
+          this.currentSchoolYear = 'No Active Year';
+          this.currentQuarter = 'N/A';
+        }
+
+        console.log(`📅 School Year: ${this.currentSchoolYear}, Quarter: ${this.currentQuarter}`);
+      } catch (error) {
+        console.error('❌ Error in fetchSchoolYearAndQuarter:', error);
+        this.currentSchoolYear = 'Error';
+        this.currentQuarter = 'Error';
+      }
+    },
+
+    setupSchoolYearSubscription() {
+      try {
+        console.log('🔔 Setting up real-time subscription for school year updates...');
+
+        // Subscribe to school_years table changes
+        this.schoolYearSubscription = supabase
+          .channel('school_years_changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+              schema: 'public',
+              table: 'school_years'
+            },
+            (payload) => {
+              console.log('🔔 School year changed:', payload);
+              // Refetch school year and quarter when changes occur
+              this.fetchSchoolYearAndQuarter();
+            }
+          )
+          .subscribe((status) => {
+            console.log('🔔 School year subscription status:', status);
+          });
+
+        // Subscribe to grading_periods table changes
+        this.gradingPeriodSubscription = supabase
+          .channel('grading_periods_changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+              schema: 'public',
+              table: 'grading_periods'
+            },
+            (payload) => {
+              console.log('🔔 Grading period changed:', payload);
+              // Refetch school year and quarter when changes occur
+              this.fetchSchoolYearAndQuarter();
+            }
+          )
+          .subscribe((status) => {
+            console.log('🔔 Grading period subscription status:', status);
+          });
+
+        console.log('✅ Real-time subscriptions established');
+      } catch (error) {
+        console.error('❌ Error setting up school year subscription:', error);
+      }
+    },
+
+    cleanupSchoolYearSubscription() {
+      console.log('🔄 Cleaning up school year subscriptions...');
       
-      // If we're in January-May, the school year started last year
-      // If we're in June-December, the school year started this year
-      let schoolYearStart;
-      if (currentMonth >= 1 && currentMonth <= 5) {
-        schoolYearStart = currentYear - 1;
-      } else {
-        schoolYearStart = currentYear;
+      if (this.schoolYearSubscription) {
+        supabase.removeChannel(this.schoolYearSubscription);
+        this.schoolYearSubscription = null;
+        console.log('✅ School year subscription cleaned up');
       }
       
-      const schoolYearEnd = schoolYearStart + 1;
-      this.currentSchoolYear = `${schoolYearStart}-${schoolYearEnd}`;
-      
-      // Calculate current quarter based on Philippine DepEd calendar
-      // Typical schedule (may vary slightly by division):
-      // 1st Quarter: June - August (approximately 45-50 days)
-      // 2nd Quarter: September - November (approximately 45-50 days)
-      // 3rd Quarter: December - February (approximately 45-50 days)
-      // 4th Quarter: March - May (approximately 45-50 days)
-      
-      let quarter = '';
-      
-      if (currentMonth === 6 || currentMonth === 7 || currentMonth === 8) {
-        // June to August
-        quarter = '1st Quarter';
-      } else if (currentMonth === 9 || currentMonth === 10 || currentMonth === 11) {
-        // September to November
-        quarter = '2nd Quarter';
-      } else if (currentMonth === 12 || currentMonth === 1 || currentMonth === 2) {
-        // December to February
-        quarter = '3rd Quarter';
-      } else if (currentMonth === 3 || currentMonth === 4 || currentMonth === 5) {
-        // March to May
-        quarter = '4th Quarter';
+      if (this.gradingPeriodSubscription) {
+        supabase.removeChannel(this.gradingPeriodSubscription);
+        this.gradingPeriodSubscription = null;
+        console.log('✅ Grading period subscription cleaned up');
       }
-      
-      this.currentQuarter = quarter;
-      
-      console.log(`📅 School Year: ${this.currentSchoolYear}, Quarter: ${this.currentQuarter}`);
     },
 
     generateSubjectColor(subjectName) {
@@ -1284,8 +1360,8 @@ export default {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     
     try {
-      // Calculate school year and quarter
-      this.calculateSchoolYear();
+      // Fetch real-time school year and quarter from database
+      await this.fetchSchoolYearAndQuarter();
       
       // Setup click handler immediately
       this.$nextTick(() => {
@@ -1306,8 +1382,11 @@ export default {
       // Start fetching subjects immediately (don't block UI)
       this.fetchSubjects()
       
-      // Setup real-time subscription (non-blocking)
+      // Setup real-time subscription for enrollments
       this.setupEnrollmentSubscription()
+      
+      // Setup real-time subscription for school year and quarter changes
+      this.setupSchoolYearSubscription()
       
       console.log('✅ INITIALIZATION COMPLETE')
       
@@ -1334,6 +1413,7 @@ export default {
     console.log('🔄 COMPONENT UNMOUNTING - Cleaning up')
     if (this.pollingInterval) clearInterval(this.pollingInterval)
     this.cleanupEnrollmentSubscription()
+    this.cleanupSchoolYearSubscription()
     document.removeEventListener('click', this.closeAllOptionsMenus, false)
   }
 }

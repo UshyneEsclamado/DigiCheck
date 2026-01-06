@@ -14,6 +14,16 @@
             <h1 class="section-header-title">{{ subject.name }} - Grades</h1>
             <p class="section-header-subtitle">{{ section.name }}</p>
             <p class="section-header-description">{{ studentInfo.full_name }} • Grade {{ studentInfo.grade_level }}</p>
+            <div class="academic-info">
+              <span class="academic-year">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                S.Y. {{ currentSchoolYear }}
+              </span>
+              <span class="quarter-badge">{{ currentQuarter }}</span>
+            </div>
           </div>
         </div>
         
@@ -56,6 +66,36 @@
           </div>
       </div>
 
+      <!-- Quarter Filter Section -->
+      <div class="quarter-filter-section">
+        <div class="filter-header">
+          <h3 class="filter-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+            Filter by Quarter
+          </h3>
+        </div>
+        <div class="quarter-pills">
+          <button 
+            @click="selectedQuarterId = null"
+            :class="['quarter-pill', { 'active': selectedQuarterId === null }]"
+          >
+            <span class="pill-label">All Quarters</span>
+            <span class="pill-count">{{ allGrades.length }}</span>
+          </button>
+          <button 
+            v-for="period in availableGradingPeriods" 
+            :key="period.id"
+            @click="selectedQuarterId = period.id"
+            :class="['quarter-pill', { 'active': selectedQuarterId === period.id }]"
+          >
+            <span class="pill-label">{{ period.period_name }}</span>
+            <span class="pill-count">{{ getGradesCountByQuarter(period.id) }}</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Grades List -->
       <div class="grades-section">
         <!-- Recent Quizzes -->
@@ -75,9 +115,16 @@
             <div v-for="item in recentQuizzes" :key="item.id" class="grade-card recent-grade">
               <div class="grade-header">
                 <div class="quiz-info">
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                     <span class="item-type-badge" :class="item.type === 'quiz' ? 'type-quiz' : 'type-assignment'">
                       {{ item.type === 'quiz' ? 'Quiz' : 'Assignment' }}
+                    </span>
+                    <span v-if="item.quarter_info" class="quarter-info-badge" :title="item.quarter_info.school_year">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      {{ item.quarter_info.period_name }} • {{ item.quarter_info.school_year }}
                     </span>
                     <h3 class="quiz-title">{{ item.title }}</h3>
                   </div>
@@ -193,6 +240,7 @@
                 <tr>
                   <th>Type</th>
                   <th>Title</th>
+                  <th>Quarter</th>
                   <th class="center-header">Score</th>
                   <th class="center-header">Status</th>
                   <th>Submitted</th>
@@ -200,7 +248,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in allGrades" :key="item.type + '-' + item.id" class="grade-row">
+                <tr v-for="item in filteredGrades" :key="item.type + '-' + item.id" class="grade-row">
                   <td class="type-cell">
                     <span class="item-type-badge-small" :class="item.type === 'quiz' ? 'type-quiz' : 'type-assignment'">
                       {{ item.type === 'quiz' ? 'Quiz' : 'Assignment' }}
@@ -209,6 +257,15 @@
                   <td class="quiz-cell">
                     <div class="quiz-name">{{ item.title }}</div>
                     <div class="quiz-code-small">{{ item.quiz_code }}</div>
+                  </td>
+                  <td class="quarter-cell">
+                    <div v-if="item.quarter_info" class="quarter-info-small">
+                      <div class="quarter-name">{{ item.quarter_info.period_name }}</div>
+                      <div class="school-year-small">{{ item.quarter_info.school_year }}</div>
+                    </div>
+                    <div v-else class="quarter-info-small">
+                      <div class="quarter-name text-muted">Not assigned</div>
+                    </div>
                   </td>
                   <td class="score-cell">
                     <div v-if="item.best_percentage !== null" class="score-badge" :class="getScoreClass(item.best_percentage)">
@@ -386,6 +443,14 @@ export default {
     const selectedAttempt = ref(null);
     const previewAnswers = ref([]);
     const loadingPreview = ref(false);
+    
+    // School Year and Quarter Management
+    const currentSchoolYear = ref('');
+    const currentQuarter = ref('');
+    const availableGradingPeriods = ref([]);
+    const selectedQuarterId = ref(null);
+    let schoolYearSubscription = null;
+    let gradingPeriodSubscription = null;
 
     let gradesSubscription = null;
 
@@ -401,6 +466,19 @@ export default {
       return [...grades.value]
         .sort((a, b) => new Date(b.latest_attempt_date || 0) - new Date(a.latest_attempt_date || 0));
     });
+
+    const filteredGrades = computed(() => {
+      if (selectedQuarterId.value === null) {
+        return allGrades.value;
+      }
+      return allGrades.value.filter(grade => 
+        grade.grading_period_id === selectedQuarterId.value
+      );
+    });
+
+    const getGradesCountByQuarter = (quarterId) => {
+      return grades.value.filter(grade => grade.grading_period_id === quarterId).length;
+    };
 
     const completedQuizzes = computed(() => {
       return grades.value.filter(g => g.status === 'completed' || g.status === 'graded').length;
@@ -692,6 +770,131 @@ export default {
       return true;
     };
 
+    const fetchSchoolYearAndQuarter = async () => {
+      try {
+        console.log('📅 Fetching active school year and quarter from database...');
+        
+        // Fetch active school year
+        const { data: activeSchoolYear, error: schoolYearError } = await supabase
+          .from('school_years')
+          .select('*')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (schoolYearError) {
+          console.error('❌ Error fetching school year:', schoolYearError);
+          currentSchoolYear.value = 'N/A';
+        } else if (activeSchoolYear) {
+          currentSchoolYear.value = activeSchoolYear.year_name;
+          console.log('✅ Active School Year:', currentSchoolYear.value);
+
+          // Fetch active grading period for this school year
+          const { data: activeGradingPeriod, error: gradingPeriodError } = await supabase
+            .from('grading_periods')
+            .select('*')
+            .eq('school_year_id', activeSchoolYear.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (gradingPeriodError) {
+            console.error('❌ Error fetching grading period:', gradingPeriodError);
+            currentQuarter.value = 'N/A';
+          } else if (activeGradingPeriod) {
+            currentQuarter.value = activeGradingPeriod.period_name;
+            console.log('✅ Active Quarter:', currentQuarter.value);
+          } else {
+            console.warn('⚠️ No active grading period found');
+            currentQuarter.value = 'No Active Quarter';
+          }
+
+          // Fetch all grading periods for this school year (for filter options)
+          const { data: allPeriods, error: periodsError } = await supabase
+            .from('grading_periods')
+            .select('*')
+            .eq('school_year_id', activeSchoolYear.id)
+            .order('period_number', { ascending: true });
+
+          if (!periodsError && allPeriods) {
+            availableGradingPeriods.value = allPeriods.map(period => ({
+              id: period.id,
+              period_name: period.period_name,
+              period_number: period.period_number,
+              school_year: activeSchoolYear.year_name
+            }));
+            console.log('✅ Available grading periods:', availableGradingPeriods.value.length);
+          }
+        } else {
+          console.warn('⚠️ No active school year found');
+          currentSchoolYear.value = 'No Active Year';
+          currentQuarter.value = 'N/A';
+        }
+
+        console.log(`📅 School Year: ${currentSchoolYear.value}, Quarter: ${currentQuarter.value}`);
+      } catch (error) {
+        console.error('❌ Error in fetchSchoolYearAndQuarter:', error);
+        currentSchoolYear.value = 'Error';
+        currentQuarter.value = 'Error';
+      }
+    };
+
+    const setupSchoolYearSubscription = () => {
+      try {
+        console.log('🔔 Setting up real-time subscription for school year updates...');
+
+        // Subscribe to school_years table changes
+        schoolYearSubscription = supabase
+          .channel('school_years_changes_grades')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'school_years'
+            },
+            (payload) => {
+              console.log('🔔 School year changed:', payload);
+              fetchSchoolYearAndQuarter();
+            }
+          )
+          .subscribe();
+
+        // Subscribe to grading_periods table changes
+        gradingPeriodSubscription = supabase
+          .channel('grading_periods_changes_grades')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'grading_periods'
+            },
+            (payload) => {
+              console.log('🔔 Grading period changed:', payload);
+              fetchSchoolYearAndQuarter();
+            }
+          )
+          .subscribe();
+
+        console.log('✅ Real-time subscriptions established');
+      } catch (error) {
+        console.error('❌ Error setting up school year subscription:', error);
+      }
+    };
+
+    const cleanupSchoolYearSubscription = () => {
+      console.log('🔄 Cleaning up school year subscriptions...');
+      
+      if (schoolYearSubscription) {
+        supabase.removeChannel(schoolYearSubscription);
+        schoolYearSubscription = null;
+      }
+      
+      if (gradingPeriodSubscription) {
+        supabase.removeChannel(gradingPeriodSubscription);
+        gradingPeriodSubscription = null;
+      }
+    };
+
     const loadGrades = async () => {
       try {
         if (!studentInfo.value.student_id) {
@@ -711,7 +914,7 @@ export default {
         // ============ LOAD QUIZZES ============
         const { data: sectionQuizzes, error: quizzesError } = await supabase
           .from('quizzes')
-          .select('id, title, quiz_code, description, number_of_questions, attempts_allowed, section_id')
+          .select('id, title, quiz_code, description, number_of_questions, attempts_allowed, section_id, grading_period_id')
           .eq('section_id', section.value.id)
           .eq('status', 'published');
 
@@ -818,6 +1021,19 @@ export default {
                     resultStatus = 'submitted';
                   }
 
+                  // Find the quarter info for this quiz
+                  let quarterInfo = null;
+                  if (quiz.grading_period_id) {
+                    const period = availableGradingPeriods.value.find(p => p.id === quiz.grading_period_id);
+                    if (period) {
+                      quarterInfo = {
+                        period_name: period.period_name,
+                        period_number: period.period_number,
+                        school_year: period.school_year
+                      };
+                    }
+                  }
+
                   processedGrades.push({
                     type: 'quiz',
                     id: quiz.id,
@@ -831,7 +1047,9 @@ export default {
                     latest_attempt_date: latestAttempt.submitted_at,
                     status: resultStatus,
                     time_taken_minutes: latestAttempt.time_taken_minutes,
-                    visible_to_student: true
+                    visible_to_student: true,
+                    grading_period_id: quiz.grading_period_id,
+                    quarter_info: quarterInfo
                   });
                 });
               }
@@ -842,7 +1060,7 @@ export default {
         // ============ LOAD ASSIGNMENTS ============
         const { data: sectionAssignments, error: assignmentsError } = await supabase
           .from('assignments')
-          .select('id, title, description, total_points, due_date, assignment_type, section_id')
+          .select('id, title, description, total_points, due_date, assignment_type, section_id, grading_period_id')
           .eq('section_id', section.value.id)
           .eq('status', 'published');
 
@@ -909,6 +1127,19 @@ export default {
                     resultStatus = 'graded';
                   }
 
+                  // Find the quarter info for this assignment
+                  let quarterInfo = null;
+                  if (assignment.grading_period_id) {
+                    const period = availableGradingPeriods.value.find(p => p.id === assignment.grading_period_id);
+                    if (period) {
+                      quarterInfo = {
+                        period_name: period.period_name,
+                        period_number: period.period_number,
+                        school_year: period.school_year
+                      };
+                    }
+                  }
+
                   processedGrades.push({
                     type: 'assignment',
                     id: assignment.id,
@@ -926,7 +1157,9 @@ export default {
                     feedback: submission.feedback,
                     is_late: submission.is_late,
                     penalty_applied: submission.penalty_applied,
-                    visible_to_student: true
+                    visible_to_student: true,
+                    grading_period_id: assignment.grading_period_id,
+                    quarter_info: quarterInfo
                   });
                 });
               }
@@ -1214,6 +1447,9 @@ export default {
     onMounted(async () => {
       console.log('StudentGrades component mounted');
       
+      // Fetch school year and quarter info first
+      await fetchSchoolYearAndQuarter();
+      
       const studentLoaded = await loadStudentInfo();
       if (!studentLoaded) {
         console.error('Failed to load student info');
@@ -1231,6 +1467,7 @@ export default {
 
       await loadGrades();
       setupRealtimeSubscription();
+      setupSchoolYearSubscription();
       loading.value = false;
     });
 
@@ -1239,12 +1476,14 @@ export default {
         console.log('Removing subscription');
         supabase.removeChannel(gradesSubscription);
       }
+      cleanupSchoolYearSubscription();
     });
 
     return {
-      loading, studentInfo, subject, section, grades, recentQuizzes, allGrades,
+      loading, studentInfo, subject, section, grades, recentQuizzes, allGrades, filteredGrades,
       completedQuizzes, completedAssignments, averageGrade, highestGrade, lowestGrade, showPreviewModal,
       selectedQuiz, selectedAttempt, previewAnswers, loadingPreview, isGraded, modalTitle,
+      currentSchoolYear, currentQuarter, availableGradingPeriods, selectedQuarterId, getGradesCountByQuarter,
       formatPHTime, formatShortDate, getStatusClass, getStatusText, getScoreClass, 
       calculateScore, viewQuizPreview, viewAssignmentFeedback, getStudentAnswerText, getCorrectAnswerText,
       goBack, goToQuizzes
@@ -1476,6 +1715,236 @@ export default {
 
 .dark .stat-label {
   color: #A3D1C6;
+}
+
+/* ============================================
+   ACADEMIC INFO (School Year & Quarter)
+   ============================================ */
+
+.academic-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.academic-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #3D8D7A 0%, #20c997 100%);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+.academic-year svg {
+  flex-shrink: 0;
+}
+
+.quarter-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  background: #f3f4f6;
+  color: #3D8D7A;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1.5px solid #3D8D7A;
+}
+
+.dark .quarter-badge {
+  background: rgba(163, 209, 198, 0.1);
+  color: #A3D1C6;
+  border-color: #A3D1C6;
+}
+
+/* ============================================
+   QUARTER FILTER SECTION
+   ============================================ */
+
+.quarter-filter-section {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dark .quarter-filter-section {
+  background: #23272b;
+  border-color: #353a40;
+}
+
+.filter-header {
+  margin-bottom: 1rem;
+}
+
+.filter-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.dark .filter-title {
+  color: #f3f4f6;
+}
+
+.filter-title svg {
+  color: #3D8D7A;
+}
+
+.dark .filter-title svg {
+  color: #A3D1C6;
+}
+
+.quarter-pills {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.quarter-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quarter-pill:hover {
+  background: #f3f4f6;
+  border-color: #3D8D7A;
+  color: #3D8D7A;
+}
+
+.quarter-pill.active {
+  background: linear-gradient(135deg, #3D8D7A 0%, #20c997 100%);
+  border-color: #3D8D7A;
+  color: white;
+  font-weight: 600;
+}
+
+.dark .quarter-pill {
+  background: #2c3136;
+  border-color: #353a40;
+  color: #9ca3af;
+}
+
+.dark .quarter-pill:hover {
+  background: #353a40;
+  border-color: #A3D1C6;
+  color: #A3D1C6;
+}
+
+.dark .quarter-pill.active {
+  background: linear-gradient(135deg, #20c997 0%, #A3D1C6 100%);
+  border-color: #A3D1C6;
+  color: #181c20;
+}
+
+.pill-label {
+  font-weight: inherit;
+}
+
+.pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.quarter-pill.active .pill-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================
+   QUARTER INFO BADGE (in Grade Cards)
+   ============================================ */
+
+.quarter-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
+  color: #065f46;
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dark .quarter-info-badge {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  color: #A3D1C6;
+  border-color: #A3D1C6;
+}
+
+.quarter-info-badge svg {
+  flex-shrink: 0;
+}
+
+/* Quarter info in table */
+.quarter-cell {
+  padding: 0.75rem 1rem;
+}
+
+.quarter-info-small {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.quarter-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #065f46;
+}
+
+.dark .quarter-name {
+  color: #A3D1C6;
+}
+
+.school-year-small {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.dark .school-year-small {
+  color: #9ca3af;
+}
+
+.text-muted {
+  color: #9ca3af !important;
+  font-style: italic;
+}
+
+.dark .text-muted {
+  color: #6b7280 !important;
 }
 
 /* ============================================
