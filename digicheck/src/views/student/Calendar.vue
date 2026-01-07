@@ -1,13 +1,13 @@
 <template>
   <div class="calendar-container">
-    <!-- Loading Overlay (uniform with Subjects.vue) -->
+    <!-- Loading Overlay -->
     <div v-if="loading" class="loading-overlay">
       <div class="loading-content">
         <div class="loading-spinner-container">
           <div class="loading-spinner"></div>
         </div>
-        <div class="loading-text">Loading Calendar</div>
-        <div class="loading-subtext">Please wait while we fetch your academic events...</div>
+        <p class="loading-text">Loading Calendar</p>
+        <p class="loading-subtext">Please wait a moment...</p>
       </div>
     </div>
 
@@ -1673,12 +1673,12 @@ export default {
   right: 0;
   bottom: 0;
   background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
@@ -1696,9 +1696,23 @@ export default {
   padding: 3rem 4rem;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(61, 141, 122, 0.15);
-  border: 2px solid rgba(163, 209, 198, 0.6);
-  animation: slideUp 0.4s ease;
+  box-shadow: 0 12px 40px rgba(61, 141, 122, 0.15);
+  border: 2px solid rgba(61, 141, 122, 0.2);
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3D8D7A, #2d6a5a, #3D8D7A);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
 }
 
 @keyframes slideUp {
@@ -1712,6 +1726,11 @@ export default {
   }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .loading-spinner-container {
   position: relative;
   width: 80px;
@@ -1723,12 +1742,12 @@ export default {
   width: 80px;
   height: 80px;
   border: 5px solid rgba(61, 141, 122, 0.1);
-  border-left: 5px solid #3d8d7a;
+  border-left: 5px solid #3D8D7A;
   border-top: 5px solid #2d6a5a;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto;
-  box-shadow: 0 0 20px rgba(61, 141, 122, 0.1);
+  box-shadow: 0 0 25px rgba(61, 141, 122, 0.2);
 }
 
 @keyframes spin {
@@ -1741,16 +1760,20 @@ export default {
 }
 
 .loading-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: 1.15rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 0.5rem 0;
   font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.3px;
 }
 
 .loading-subtext {
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: #64748b;
   margin: 0;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -4006,6 +4029,23 @@ export default {
   
   .schedule-header-text h3 {
     font-size: var(--font-size-xl);
+  }
+
+  /* Loading overlay mobile */
+  .loading-overlay {
+    border-radius: 16px;
+  }
+
+  .loading-content {
+    padding: 2rem 1rem;
+  }
+
+  .loading-text {
+    font-size: 1.1rem;
+  }
+
+  .loading-subtext {
+    font-size: 0.85rem;
   }
 }
 </style>

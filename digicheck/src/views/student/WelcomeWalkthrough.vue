@@ -201,6 +201,13 @@ export default {
       this.$nextTick(() => {
         this.updateHighlightPosition();
       });
+    },
+    // Watch for changes in studentData to prevent re-showing
+    'studentData.has_completed_walkthrough'(newValue) {
+      if (newValue === true && this.isActive) {
+        console.log('✅ Walkthrough marked as completed - closing');
+        this.closeWalkthrough();
+      }
     }
   },
   async mounted() {
@@ -215,11 +222,18 @@ export default {
         // Check if walkthrough has been completed
         const hasCompleted = this.studentData.has_completed_walkthrough;
         
-        if (!hasCompleted) {
+        // Also check localStorage as a backup
+        const localStorageKey = `walkthrough_completed_${this.studentData.id}`;
+        const hasCompletedLocally = localStorage.getItem(localStorageKey);
+        
+        // Only show walkthrough if it hasn't been completed in database OR localStorage
+        if (!hasCompleted && !hasCompletedLocally) {
           // Wait a bit for the page to fully render
           setTimeout(() => {
             this.startWalkthrough();
           }, 500);
+        } else {
+          console.log('✅ Walkthrough already completed - skipping');
         }
       } catch (error) {
         console.error('Error checking walkthrough status:', error);
@@ -255,7 +269,7 @@ export default {
     
     async skipWalkthrough() {
       try {
-        // Save that user skipped the walkthrough
+        // Save that user skipped the walkthrough in database
         const { error } = await supabase
           .from('students')
           .update({ has_completed_walkthrough: true })
@@ -263,22 +277,37 @@ export default {
         
         if (error) throw error;
         
+        // Also save to localStorage as backup
+        const localStorageKey = `walkthrough_completed_${this.studentData.id}`;
+        localStorage.setItem(localStorageKey, 'true');
+        
+        console.log('⏭️ Walkthrough skipped and marked as completed');
+        
         this.closeWalkthrough();
       } catch (error) {
         console.error('Error skipping walkthrough:', error);
+        // Still save to localStorage even if database fails
+        const localStorageKey = `walkthrough_completed_${this.studentData.id}`;
+        localStorage.setItem(localStorageKey, 'true');
         this.closeWalkthrough();
       }
     },
     
     async completeWalkthrough() {
       try {
-        // Mark walkthrough as completed
+        // Mark walkthrough as completed in database
         const { error } = await supabase
           .from('students')
           .update({ has_completed_walkthrough: true })
           .eq('id', this.studentData.id);
         
         if (error) throw error;
+        
+        // Also save to localStorage as backup
+        const localStorageKey = `walkthrough_completed_${this.studentData.id}`;
+        localStorage.setItem(localStorageKey, 'true');
+        
+        console.log('🎉 Walkthrough completed successfully!');
         
         this.closeWalkthrough();
         
@@ -286,6 +315,9 @@ export default {
         this.$emit('walkthrough-completed');
       } catch (error) {
         console.error('Error completing walkthrough:', error);
+        // Still save to localStorage even if database fails
+        const localStorageKey = `walkthrough_completed_${this.studentData.id}`;
+        localStorage.setItem(localStorageKey, 'true');
         this.closeWalkthrough();
       }
     },
@@ -323,7 +355,7 @@ export default {
       }
       
       const rect = element.getBoundingClientRect();
-      const padding = 8;
+      const padding = 12;
       
       // Highlight style
       this.highlightStyle = {
@@ -335,22 +367,25 @@ export default {
         zIndex: 10001
       };
       
-      // Tooltip position
-      const tooltipWidth = 360;
-      const tooltipOffset = 20;
+      // Tooltip dimensions
+      const tooltipWidth = 420;
+      const tooltipOffset = 24;
+      const screenPadding = 20;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       
       let tooltipTop = rect.top;
       let tooltipLeft = rect.right + tooltipOffset;
       let position = 'right';
       let arrowPosition = 'left';
       
-      // Determine best position based on step.position
+      // Determine best position based on step.position and available space
       if (step.position === 'left') {
         tooltipLeft = rect.left - tooltipWidth - tooltipOffset;
         position = 'left';
         arrowPosition = 'right';
       } else if (step.position === 'top') {
-        tooltipTop = rect.top - tooltipOffset;
+        tooltipTop = rect.top - tooltipOffset - 200; // Approximate tooltip height
         tooltipLeft = rect.left + (rect.width / 2) - (tooltipWidth / 2);
         position = 'top';
         arrowPosition = 'bottom';
@@ -361,17 +396,18 @@ export default {
         arrowPosition = 'top';
       }
       
-      // Check if tooltip goes off screen
-      if (tooltipLeft < 20) {
-        tooltipLeft = 20;
-      } else if (tooltipLeft + tooltipWidth > window.innerWidth - 20) {
-        tooltipLeft = window.innerWidth - tooltipWidth - 20;
+      // Ensure tooltip stays within viewport bounds - Horizontal
+      if (tooltipLeft < screenPadding) {
+        tooltipLeft = screenPadding;
+      } else if (tooltipLeft + tooltipWidth > viewportWidth - screenPadding) {
+        tooltipLeft = viewportWidth - tooltipWidth - screenPadding;
       }
       
-      if (tooltipTop < 20) {
-        tooltipTop = 20;
-      } else if (tooltipTop > window.innerHeight - 200) {
-        tooltipTop = window.innerHeight - 200;
+      // Ensure tooltip stays within viewport bounds - Vertical
+      if (tooltipTop < screenPadding) {
+        tooltipTop = screenPadding;
+      } else if (tooltipTop > viewportHeight - 300) { // Approximate min space needed
+        tooltipTop = Math.max(screenPadding, viewportHeight - 450);
       }
       
       this.tooltipStyle = {
@@ -389,6 +425,8 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 .walkthrough-container {
   position: fixed;
   top: 0;
@@ -397,6 +435,7 @@ export default {
   bottom: 0;
   z-index: 10000;
   pointer-events: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .walkthrough-overlay {
@@ -405,89 +444,147 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   z-index: 10000;
   pointer-events: all;
 }
 
 .spotlight-highlight {
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 
-    0 0 0 4px rgba(95, 179, 160, 0.5),
-    0 0 0 9999px rgba(0, 0, 0, 0.75);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    0 0 0 4px rgba(61, 141, 122, 0.6),
+    0 0 0 9999px rgba(0, 0, 0, 0.8);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 
 .walkthrough-tooltip {
-  background: var(--card-background);
-  border-radius: 16px;
-  padding: 1.5rem;
-  width: 360px;
-  max-width: 90vw;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   pointer-events: all;
+  position: fixed;
+}
+
+/* Custom Scrollbar for Tooltip */
+.walkthrough-tooltip::-webkit-scrollbar {
+  width: 6px;
+}
+
+.walkthrough-tooltip::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.3);
+  border-radius: 10px;
+}
+
+.walkthrough-tooltip::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  border-radius: 10px;
 }
 
 .walkthrough-tooltip.center {
-  max-width: 480px;
-  width: 90%;
+  max-width: 520px;
+  width: calc(100vw - 40px);
 }
 
 .tooltip-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(226, 232, 240, 0.5);
+  position: relative;
+}
+
+.tooltip-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3D8D7A, transparent);
+  opacity: 0.3;
 }
 
 .step-indicator {
   font-size: 0.813rem;
-  font-weight: 600;
-  color: var(--accent-color);
+  font-weight: 700;
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .close-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
-  background: transparent;
-  border-radius: 8px;
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--text-muted);
-  transition: all 0.2s ease;
+  color: #64748b;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .close-btn:hover {
-  background: var(--bg-accent);
-  color: var(--text-primary);
+  background: rgba(226, 232, 240, 0.9);
+  color: #1e293b;
+  transform: scale(1.05) rotate(90deg);
 }
 
 .tooltip-content h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 0.75rem 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #3D8D7A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 0.875rem 0;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .tooltip-content p {
   font-size: 0.95rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
+  color: #64748b;
+  line-height: 1.7;
   margin: 0;
+  font-weight: 500;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .tips-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid rgba(226, 232, 240, 0.5);
+  position: relative;
+}
+
+.tips-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3D8D7A, transparent);
+  opacity: 0.3;
 }
 
 .tips-section ul {
@@ -498,137 +595,175 @@ export default {
 
 .tips-section li {
   font-size: 0.875rem;
-  color: var(--text-secondary);
-  padding: 0.5rem 0;
-  padding-left: 1.5rem;
+  color: #64748b;
+  padding: 0.65rem 0;
+  padding-left: 1.75rem;
   position: relative;
+  line-height: 1.6;
+  font-weight: 500;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .tips-section li::before {
   content: '✓';
   position: absolute;
   left: 0;
-  color: var(--accent-color);
-  font-weight: bold;
+  color: #3D8D7A;
+  font-weight: 800;
+  font-size: 1rem;
 }
 
 .tooltip-actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .btn-primary,
 .btn-secondary,
 .btn-skip {
-  padding: 0.75rem 1.25rem;
+  padding: 0.875rem 1.5rem;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-weight: 700;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.1px;
 }
 
 .btn-primary {
-  background: var(--accent-color);
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
   color: white;
   flex: 1;
+  min-width: 140px;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(61, 141, 122, 0.25);
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #2d6a5a, #1e4d3f);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(61, 141, 122, 0.35);
 }
 
 .btn-complete {
-  background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-light) 100%);
+  background: linear-gradient(135deg, #3D8D7A 0%, #5fb3a0 100%);
+  box-shadow: 0 6px 16px rgba(61, 141, 122, 0.3);
+}
+
+.btn-complete:hover {
+  box-shadow: 0 8px 24px rgba(61, 141, 122, 0.4);
 }
 
 .btn-secondary {
-  background: var(--bg-accent);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: rgba(248, 250, 252, 0.8);
+  color: #1e293b;
+  border: 2px solid rgba(226, 232, 240, 0.8);
+  min-width: 120px;
 }
 
 .btn-secondary:hover {
-  background: var(--bg-accent-hover);
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(203, 213, 225, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .btn-skip {
   background: transparent;
-  color: var(--text-muted);
-  padding: 0.75rem;
+  color: #64748b;
+  padding: 0.75rem 1rem;
   font-size: 0.813rem;
+  font-weight: 600;
 }
 
 .btn-skip:hover {
-  color: var(--text-primary);
+  color: #1e293b;
+  background: rgba(241, 245, 249, 0.5);
 }
 
 .progress-dots {
   display: flex;
   justify-content: center;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
+  gap: 0.65rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid rgba(226, 232, 240, 0.5);
+  position: relative;
+}
+
+.progress-dots::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3D8D7A, transparent);
+  opacity: 0.3;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--border-color);
-  transition: all 0.3s ease;
+  background: rgba(226, 232, 240, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
 }
 
 .dot.active {
-  background: var(--accent-color);
-  transform: scale(1.3);
+  background: linear-gradient(135deg, #3D8D7A, #2d6a5a);
+  transform: scale(1.4);
+  box-shadow: 0 2px 8px rgba(61, 141, 122, 0.4);
 }
 
 .dot.completed {
-  background: var(--accent-light);
+  background: #5fb3a0;
+  border-color: #3D8D7A;
 }
 
 .tooltip-arrow {
   position: absolute;
   width: 0;
   height: 0;
-  border: 10px solid transparent;
+  border: 12px solid transparent;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .tooltip-arrow.left {
-  left: -20px;
+  left: -24px;
   top: 50%;
   transform: translateY(-50%);
-  border-right-color: var(--card-background);
+  border-right-color: rgba(255, 255, 255, 0.98);
 }
 
 .tooltip-arrow.right {
-  right: -20px;
+  right: -24px;
   top: 50%;
   transform: translateY(-50%);
-  border-left-color: var(--card-background);
+  border-left-color: rgba(255, 255, 255, 0.98);
 }
 
 .tooltip-arrow.top {
-  top: -20px;
+  top: -24px;
   left: 50%;
   transform: translateX(-50%);
-  border-bottom-color: var(--card-background);
+  border-bottom-color: rgba(255, 255, 255, 0.98);
 }
 
 .tooltip-arrow.bottom {
-  bottom: -20px;
+  bottom: -24px;
   left: 50%;
   transform: translateX(-50%);
-  border-top-color: var(--card-background);
+  border-top-color: rgba(255, 255, 255, 0.98);
 }
 
 /* Animations */
@@ -666,11 +801,22 @@ export default {
     right: 20px !important;
     top: auto !important;
     width: auto !important;
+    max-width: calc(100vw - 40px) !important;
     transform: none !important;
+    padding: 1.5rem;
+    max-height: calc(100vh - 120px);
   }
   
   .tooltip-arrow {
     display: none;
+  }
+  
+  .tooltip-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .tooltip-content p {
+    font-size: 0.875rem;
   }
   
   .tooltip-actions {
@@ -681,12 +827,23 @@ export default {
   .btn-secondary {
     width: 100%;
     justify-content: center;
+    min-width: auto;
+  }
+  
+  .btn-skip {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
   .walkthrough-tooltip {
     padding: 1.25rem;
+    bottom: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    max-width: calc(100vw - 20px) !important;
   }
   
   .tooltip-content h3 {
@@ -694,14 +851,54 @@ export default {
   }
   
   .tooltip-content p {
-    font-size: 0.875rem;
+    font-size: 0.813rem;
+  }
+  
+  .tips-section li {
+    font-size: 0.813rem;
+    padding: 0.5rem 0;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.813rem;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (max-height: 500px) {
+  .walkthrough-tooltip {
+    max-height: calc(100vh - 40px);
+    bottom: 10px !important;
   }
 }
 
 /* Dark Mode Support */
 :root.dark .spotlight-highlight {
   box-shadow: 
-    0 0 0 4px rgba(95, 179, 160, 0.6),
-    0 0 0 9999px rgba(0, 0, 0, 0.85);
+    0 0 0 4px rgba(61, 141, 122, 0.7),
+    0 0 0 9999px rgba(0, 0, 0, 0.9);
+}
+
+:root.dark .walkthrough-tooltip {
+  background: rgba(35, 39, 43, 0.98);
+  border-color: rgba(61, 141, 122, 0.4);
+}
+
+:root.dark .tooltip-arrow.left {
+  border-right-color: rgba(35, 39, 43, 0.98);
+}
+
+:root.dark .tooltip-arrow.right {
+  border-left-color: rgba(35, 39, 43, 0.98);
+}
+
+:root.dark .tooltip-arrow.top {
+  border-bottom-color: rgba(35, 39, 43, 0.98);
+}
+
+:root.dark .tooltip-arrow.bottom {
+  border-top-color: rgba(35, 39, 43, 0.98);
 }
 </style>    
